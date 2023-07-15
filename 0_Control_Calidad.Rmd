@@ -1,0 +1,2929 @@
+---
+title: "Control de Calidad"
+author: "Gabriela Friedrich"
+date: "6/06/2021"
+output: 
+    html_document:
+      toc: true
+      toc_float: true
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(knitr) #Para mejorar calidad de reportes
+library(tidyverse) #Manipulacion y visualización de data
+library(magrittr) #Manipulación de data
+library(kableExtra) #Mejorar calidad de reportes
+library(dlookr) #Si no funciona reinstalar "rmarkdown". Para diagnosticos generales
+library(lubridate) #Manejo de fechas
+library(Hmisc)
+```
+
+
+Reporte de control de calidad de las observaciones de RedCAP - EPICO. Se utilizan las reglas establecidas en el [manual de control de calidad](http://rmarkdown.rstudio.com).
+
+
+```{r}
+rm(list=ls())
+data=read.csv('C:/Users/gaga1/OneDrive/Documents/MEPI/EPICO/Control de calidad/Datos_Todos_6_06_2021/EPICOCOLOMBIA_DATA_2021-06-06_2021.csv')
+data=data[,! names(data) %in% ("redcap_data_access_group") ]
+
+
+```
+
+```{r}
+#Setting Labels
+
+label(data$record)="Identification"
+label(data$hospital)="Hospital"
+label(data$health_worker_name)="Who fills the paper data notebook (name)"
+label(data$center_id_complete)="Complete?"
+label(data$patient_birth_date)="Patients date of birth"
+label(data$admission_date)="Date of admission"
+label(data$age_months)="Age in months"
+label(data$sex)="Sex at Birth:"
+label(data$last_15)="Has the child been previously admitted to hospital in the last 15 days?"
+label(data$demographics_complete)="Complete?"
+label(data$symptoms_epi_travel)="A history of travel to an area with documented cases of novel coronavirus infection"
+label(data$symptoms_epi_physical)="Close contact with a confirmed or probable case of nCoV infection"
+label(data$symptoms_epi_healthfac)="Presence in a healthcare facility where nCoV infections have been managed"
+label(data$symptoms_epi_animal)="Direct contact with animals in countries where the nCoV is known to be circulating in animal populations or where human infections have occurred as a result of presumed zoonotic transmission"
+label(data$symptoms_epi_comm)="Area with community transmission"
+label(data$contact___1)="Close contact (choice=Health care associated exposure, including providing direct care for novel coronavirus patients, e.g. health care worker, working with health care workers infected with novel coronavirus, visiting patients or staying in the same close environment of a novel coronavirus patient, or direct exposure to body fluids or specimens including aerosols)"
+label(data$contact___2)="Close contact (choice=Working together in close proximity or sharing the same classroom environment with a novel coronavirus patient)"
+label(data$contact___3)="Close contact (choice=Traveling together with novel coronavirus patient in any kind of conveyance)"
+label(data$contact___4)="Close contact (choice=Living in the same household as a novel coronavirus patient)"
+label(data$index_case)="Who is the index case (father, mother, uncle ...)"
+label(data$inclusion_criteria_complete)="Complete?"
+label(data$fever_start_date)="Fever onset date"
+label(data$fever_days)="Fever days (from start to admission, including start day)"
+label(data$fever_days_total)="Fever days (from start to end, including start day)"
+label(data$fever_3)="Fever days >= 3"
+label(data$anamnesis_complete)="Complete?"
+label(data$comorb)="Comorbidities"
+label(data$chroniccard_mhyn)="Chronic cardiac disease, including congenital heart disease (not hypertesnion)"
+label(data$hypertension_mhyn)="Hypertension"
+label(data$chronicpul_mhyn)="Chronic pulmonary disease (not asthma)"
+label(data$asthma_mhyn)="Asthma (or recurrent wheezing)"
+label(data$tb_mhyn)="Tuberculosis"
+label(data$resp_inf_mhyn)="History of respiratory infection in the previous 4 weeks prior to current illness?"
+label(data$renal_mhyn)="Chronic kidney disease"
+label(data$modliver_mhyn)="Moderate or severe liver disease"
+label(data$mildliv_mhyn)="Mild Liver disease"
+label(data$chronicneu_mhyn)="Chronic neurological disorder"
+label(data$malignantneo_mhyn)="Malignant neoplasm"
+label(data$chronhaemo_mhyn)="Chronic hematologic disease"
+label(data$aidshiv_mhyn)="AIDS/HIV"
+label(data$obesity_mhyn)="Obesity (as defined by clinical staff)"
+label(data$diabetiscomp_mhyn)="Diabetes with complications"
+label(data$diabetes_mhyn)="Diabetes without complications"
+label(data$inflammatory_mhyr)="Inflammatory disorder"
+label(data$rheumatology_mhyr)="Rheumatologic disorder"
+label(data$kawa_mhyn)="Past history of Kawasaki disease"
+label(data$kawa_fam_mhyn)="Family history of Kawasaki disease"
+label(data$dementia_mhyn)="Dementia"
+label(data$malnutrition_mhyn)="Malnutrition"
+label(data$other_mhyn)="Other relevant risk factors"
+label(data$inf_reum_type)="Please specify inflammatory or rheumatological disorder"
+label(data$smoking_mhyn)="Smoking"
+label(data$otherrisktext)="Other  relevant risk factor; Specify"
+label(data$immunosupressors)="On immunosuppressive medication?"
+label(data$comorbidities_complete)="Complete?"
+label(data$influenza_full_regimen)="Influenza vaccine (current year)"
+label(data$apsc_vcageind)="Vaccinations appropriate for age/country?"
+label(data$vaccines_complete)="Complete?"
+label(data$weight)="Weight (grams)"
+label(data$weight_percentile)="Weight percentile"
+label(data$size)="Size (cm)"
+label(data$size_percentile)="Size percentile"
+label(data$anthropometry_complete)="Complete?"
+label(data$temp_vsorres)="Temperature"
+label(data$hr_vsorres)="Heart Rate"
+label(data$rr_vsorres)="Respiratory Rate"
+label(data$sysbp_vsorres)="Systolic blood pressure"
+label(data$admission_diabp_vsorres)="Diastolic blood pressure"
+label(data$oxy_vsorres)="Oxygen saturation"
+label(data$muac)="Mid-upper arm circumference"
+label(data$dehydr)="Dehydratation"
+label(data$fever_ceoccur_v2)="History of fever"
+label(data$cough_ceoccur_v2)="Cough"
+label(data$sorethroat_ceoccur_v2)="Sore throat"
+label(data$runnynose_ceoccur_v2)="Runny nose (Rhinorrhoea)"
+label(data$wheeze_ceoccur_v2)="Wheezing"
+label(data$chestpain_ceoccur_v2)="Chest pain"
+label(data$myalgia_ceoccur_v2)="Muscle aches (Myalgia)"
+label(data$jointpain_ceoccur_v2)="Joint pain (Arthralgia)"
+label(data$fatigue_ceoccur_v2)="Fatigue / Malaise"
+label(data$shortbreath_ceoccur_v2)="Shortness of breath or work of breathing (Dyspnea)"
+label(data$lowerchest_ceoccur_v2)="Lower chest wall indrawing"
+label(data$headache_ceoccur_v2)="Headache"
+label(data$confusion_ceoccur_v2)="Altered consciousness / confusion"
+label(data$seizures_cecoccur_v2)="Seizures"
+label(data$abdopain_ceoccur_v2)="Abdominal pain"
+label(data$vomit_ceoccur_v2)="Vomiting / Nausea"
+label(data$diarrhoea_ceoccur_v2)="Diarrhoea"
+label(data$conjunct_ceoccur_v2)="Conjunctivitis"
+label(data$oral_inf)="Oral mucosal inflammation signs"
+label(data$pale_skin)="Pale/mottled skin"
+label(data$rash_ceoccur_v2)="Skin rash"
+label(data$skinulcers_ceoccur_v2)="Skin ulcers"
+label(data$peri_inf)="Peripheral cutaneous inflammation signs (hands or feet)"
+label(data$lymp_ceoccur_v2)="Lymphadenopathy"
+label(data$bleed_ceoccur_v2)="Bleeding (Haemorrhage)"
+label(data$cold_hands)="Cold hands/feet"
+label(data$cap_refill)="Capillary refill time > 2 seconds ?"
+label(data$sw_joints)="Swollen joints"
+label(data$st_neck)="Stiff neck"
+label(data$hypo_flop)="Hypotonia / floppiness"
+label(data$paralysis)="Paralysis"
+label(data$shock)="Shock signs"
+label(data$sens_alt)="Alteration in taste or smell"
+label(data$admission_signs_and_symptoms_complete)="Complete?"
+label(data$hb)="Hemoglobin"
+label(data$leukocytes)="Leukocytes"
+label(data$neutrophils)="Neutrophils"
+label(data$lymphocytes)="Lymphocytes"
+label(data$platelets)="Platelets"
+label(data$aptt_aptr)="Activated Partial Thromboplastin Time / Ratio (APTT / APTR)"
+label(data$pt)="Prothrombin Time (PT)"
+label(data$inr)="International Normalized Ratio (INR)"
+label(data$fibrino)="Fibrinogen"
+label(data$c_reactive_protein)="C-reactive protein"
+label(data$procalcitonin)="Procalcitonin"
+label(data$cpk)="CPK"
+label(data$alt_gpt)="Alanine aminotransferase-GPT"
+label(data$ast_got)="Aspartate aminotransferase-GOT"
+label(data$urea)="Urea"
+label(data$creatinin)="Creatinine"
+label(data$ldh)="Lactate dehydrogenase"
+label(data$albumin)="Albumin"
+label(data$sodium)="Serum sodium"
+label(data$d_dimer)="Dimer-D"
+label(data$il_6)="IL-6"
+label(data$ferritin)="Ferritin"
+label(data$trig)="Triglycerides"
+label(data$bilirubin)="Total bilirubin"
+label(data$lactate)="Lactate"
+label(data$ph)="pH"
+label(data$po2)="pO2"
+label(data$pco2)="pCO2"
+label(data$blood_tests_complete)="Complete?"
+label(data$pcr_cov2_1)="SARS-CoV-2 PCR at diagnosis"
+label(data$ct_cov2_1)="Cycle threshold (Ct) of SARS-CoV-2 PCR at diagnosis"
+label(data$pcr_cov2_1_date)="Date of SARS-CoV-2 PCR at diagnosis"
+label(data$pcr_cov2_2)="SARS-CoV-2 PCR at visit 2"
+label(data$ct_cov2_2)="Cycle threshold (Ct) of SARS-CoV-2 PCR at visit 2"
+label(data$pcr_cov2_2_date)="Date of SARS-CoV-2 PCR at visit 2"
+label(data$pcr_cov2_3)="SARS-CoV-2 PCR at visit 3"
+label(data$ct_cov2_3)="Cycle threshold (Ct) of SARS-CoV-2 PCR at visit 3"
+label(data$pcr_cov2_3_date)="Date of SARS-CoV-2 PCR at visit 3"
+label(data$pcr_cov2_4)="SARS-CoV-2 PCR at visit 4"
+label(data$ct_cov2_4)="Cycle threshold (Ct) of SARS-CoV-2 PCR at visit 4"
+label(data$pcr_cov2_4_date)="Date of SARS-CoV-2 PCR at visit 4"
+label(data$rapid_ag_test_covid___1)="Rapid Antigenic Test (choice=Nasopharyngeal smear)"
+label(data$rapid_ag_test_covid___2)="Rapid Antigenic Test (choice=Saliva)"
+label(data$rapid_ag_test_covid_1)="Nasopharyngeal smear result"
+label(data$rapid_ag_test_covid_2)="Saliva result"
+label(data$virus_obtained_pcr_16)="PCR obtained for 16 viruses in respiratory secretion"
+label(data$pcr_types_virus_sr___1)="Positive result in respiratory secretion PCR (choice=VRS)"
+label(data$pcr_types_virus_sr___2)="Positive result in respiratory secretion PCR (choice=hMPV)"
+label(data$pcr_types_virus_sr___3)="Positive result in respiratory secretion PCR (choice=PIV 1)"
+label(data$pcr_types_virus_sr___4)="Positive result in respiratory secretion PCR (choice=PIV 2)"
+label(data$pcr_types_virus_sr___5)="Positive result in respiratory secretion PCR (choice=PIV 3)"
+label(data$pcr_types_virus_sr___6)="Positive result in respiratory secretion PCR (choice=PIV 4)"
+label(data$pcr_types_virus_sr___7)="Positive result in respiratory secretion PCR (choice=Influenza A)"
+label(data$pcr_types_virus_sr___8)="Positive result in respiratory secretion PCR (choice=Influenza B)"
+label(data$pcr_types_virus_sr___9)="Positive result in respiratory secretion PCR (choice=hBoV)"
+label(data$pcr_types_virus_sr___10)="Positive result in respiratory secretion PCR (choice=ADV)"
+label(data$pcr_types_virus_sr___11)="Positive result in respiratory secretion PCR (choice=EV-hRV)"
+label(data$pcr_types_virus_sr___12)="Positive result in respiratory secretion PCR (choice=Rhinovirus)"
+label(data$pcr_types_virus_sr___13)="Positive result in respiratory secretion PCR (choice=CoV 229E)"
+label(data$pcr_types_virus_sr___14)="Positive result in respiratory secretion PCR (choice=CoV OC43)"
+label(data$pcr_types_virus_sr___15)="Positive result in respiratory secretion PCR (choice=CoV NL63)"
+label(data$pcr_types_virus_sr___16)="Positive result in respiratory secretion PCR (choice=CoV HKU12)"
+label(data$pcr_atipical_sr)="Obtained PCR sample for atypical respiratory secretion?"
+label(data$pcr_mn_sr)="PCR Mycoplasma pneumoniae in respiratory secretion"
+label(data$pcr_cn_sr)="PCR Chlamydophila pneumoniae in respiratory secretion"
+label(data$pcr_hib_sr)="Haemophilus influenzae PCR in respiratory secretion"
+label(data$pcr_leg_sr)="PCR Legionella in respiratory secretion"
+label(data$pcr_bordetella_sr)="PCR Bordetella in respiratory secretion"
+label(data$anti_influenza)="Antigen Influenza"
+label(data$anti_rsv)="Antigen RSV"
+label(data$res_samples)="Respiratory samples stored?"
+label(data$respiratory_secretion_microbiology_complete)="Complete?"
+label(data$first_sr_sc2)="Acute phase serology SARS-CoV-2 performed"
+label(data$first_sr_sc2_type)="Acute phase serology test"
+label(data$first_sr_sc2_type_ot)="Please, specify other test"
+label(data$first_sr_sc2_date)="Date of acute phase serology SARS-CoV-2"
+label(data$igm_sc2_1)="Acute phase serology IgM SARS-CoV-2"
+label(data$igg_sc2_1)="Acute phase serology IgG SARS-CoV-2"
+label(data$second_sr_sc2)="Follow-up serology SARS-CoV-2 performed"
+label(data$second_sr_sc2_type)="Follow-up serology test"
+label(data$second_sr_sc2_type_ot)="Please, specify other test"
+label(data$second_sr_sc2_date)="Date of follow-up serology SARS-CoV-2"
+label(data$igm_sc2_2)="Follow-up serology IgM SARS-CoV-2"
+label(data$igg_sc2_2)="Follow-up serology IgG SARS-CoV-2"
+label(data$sr_sc2_days)="Days from acute phase and follow-up serology for SARS-COV-2 (including the day when acute phase serology was done)"
+label(data$blood_culture)="Blood culture for significant bacteria"
+label(data$probable_bacterial_etiology_hemoculture)="Most likely bacterial aetiology in blood culture"
+label(data$probable_text)="Please, specify"
+label(data$other_bacteria_hemoculture)="Other bacteria in blood culture"
+label(data$probable_text_2)="Please, specify"
+label(data$first_sr_atipical)="First atypical serology performed"
+label(data$date_ser_1)="Date of first atypical bacteria serology"
+label(data$serology1_igm_mn)="Serology 1 IgM Mycoplasma pneumoniae"
+label(data$serology1_igg_mn)="Serology 1 IgG Mycoplasma pneumoniae"
+label(data$title1_igg_mn)="Title 1 IgG Mycoplasma pneumoniae"
+label(data$serology1_igm_cn)="Serology 1 IgM Chlamydophila pneumoniae"
+label(data$serology1_igg_cn)="Serology 1 IgG Chlamydophila pneumoniae"
+label(data$title1_igg_cn)="Title 1 IgG Chlamydophila pneumoniae"
+label(data$second_sr_atipical)="Second atypical serology performed"
+label(data$date_ser_2)="Date of second atypical bacteria serology"
+label(data$serology2_igm_mn)="Serology 2 IgM Mycoplasma pneumoniae"
+label(data$serology2_igg_mn)="Serology 2 IgG Mycoplasma pneumoniae"
+label(data$title2_igg_mn)="Title 2 IgG Mycoplasma pneumoniae"
+label(data$serology2_igm_cn)="Serology 2 IgM Chlamydophila pneumoniae"
+label(data$serology2_igg_cn)="Serology 2 IgG Chlamydophila pneumoniae"
+label(data$title_igg_mn)="Title 2 IgG Chlamydophila pneumoniae"
+label(data$seroconversion_mn)="Seroconversion"
+label(data$blood_samples)="Whole blood samples stored?"
+label(data$plasma_samples)="Plasma samples stored?"
+label(data$blood_microbiology_complete)="Complete?"
+label(data$codetection)="Codetection"
+label(data$codetecion_type)="Codetection type"
+label(data$codetecion_complete)="Complete?"
+label(data$thoracentesis_done)="Thoracentesis performed"
+label(data$ph_thoracentesis)="pH thoracentesis"
+label(data$ag_pneumo_pf)="Pneumococcal antigen in pleural fluid"
+label(data$pcr_pneumo_pf)="Pleural fluid pneumococcal PCR"
+label(data$culture_pf)="Pleural fluid culture"
+label(data$cultured_bacteria_pf)="Bacteria grown in pleural fluid"
+label(data$other_cultured_bacteria_pf)="Other bacteria in pleural fluid culture"
+label(data$pleural_fluid_microbiology_complete)="Complete?"
+label(data$fever_end_date)="End date of fever"
+label(data$oxygen_therapy)="Oxygen therapy"
+label(data$oxigen_start_date)="Oxygen therapy start date"
+label(data$oxigen_end_date)="End date oxygen therapy"
+label(data$oxygen_therapy_time)="Days of oxygen therapy (including start day)"
+label(data$hft)="High flow therapy"
+label(data$hft_start_date)="High flow start date"
+label(data$hft_end_date)="High flow end date"
+label(data$hft_time)="Days of high flow therapy (including start day)"
+label(data$cpap)="CPAP"
+label(data$cpap_start_date)="CPAP start date"
+label(data$cpap_end_date)="CPAP end date"
+label(data$cpap_time)="Days of CPAP (including start day)"
+label(data$picu_admission)="Admission to PICU"
+label(data$picu_admission_date)="PICU admission date"
+label(data$picu_discharge_date)="PICU discharge date"
+label(data$picu_time)="Days of PICU admission (including admission day)"
+label(data$mechanical_ventilation)="Mechanical ventilation"
+label(data$nimv)="Noninvasive mechanical ventilation"
+label(data$nimv_start_date)="Noninvasive mechanical ventilation start date"
+label(data$nimv_end_date)="Noninvasive mechanical ventilation end date"
+label(data$nimv_time)="Days of noninvasive mechanical ventilation (including start day)"
+label(data$imv)="Invasive mechanical ventilation"
+label(data$imv_start_date)="Invasive mechanical ventilation start date"
+label(data$imv_end_date)="Invasive mechanical ventilation end date"
+label(data$imv_time)="Days of invasive mechanical ventilation (including start day)"
+label(data$discharge_date)="Hospital discharge date"
+label(data$hosp_time)="Days of admission (including admission day)"
+label(data$evolution_complete)="Complete?"
+label(data$complications)="Complications (including new-onset signs or diagnosis after admission, such as Kawasaki-like / Inflammatory Syndrome symptoms)"
+label(data$pleural_effusion)="Pleural effusion"
+label(data$effusion_type)="Type of pleural effusion"
+label(data$corticosteroids)="Systemic corticosteroids"
+label(data$pleural_drainage)="Pleural drainage"
+label(data$drainage_type)="Drain type"
+label(data$pneumatocele_abscess)="Necrotizing pneumonia / abscess / pneumatocele"
+label(data$pneumothorax)="Pneumothorax"
+label(data$cardio_comp)="Cardiological complications"
+label(data$cardio_comp_myoc)="Myocarditis / myocardial dysfunction"
+label(data$cardio_comp_peri)="Pericarditis"
+label(data$cardio_comp_valve)="Valve dysfunction"
+label(data$cardio_comp_arry)="Arrhythmia"
+label(data$cardio_comp_cor)="Coronary abnormalities"
+label(data$cardio_comp_ane)="Aneurysms"
+label(data$cardio_comp_bnp)="NT-proBNP"
+label(data$cardio_comp_trop)="Troponin I"
+label(data$cardio_comp_other)="Other cardiologic complications"
+label(data$sepsis)="Sepsis"
+label(data$renal_failure)="Renal failure"
+label(data$kawa)="Kawasaki-like / Inflammatory Syndrome symptoms"
+label(data$other_complications)="Other complications"
+label(data$complications_complete)="Complete?"
+label(data$x_ray_1)="X-ray 1 image"
+label(data$x_ray_1_date)="Date of X-ray 1"
+label(data$xray_result_1)="Interpretation of first radiological image"
+label(data$x_ray_1_reported_by___1)="Responsible for first radiological image interpretation (choice=Clinician)"
+label(data$x_ray_1_reported_by___2)="Responsible for first radiological image interpretation (choice=Radiology report)"
+label(data$x_ray_1_reported_by___3)="Responsible for first radiological image interpretation (choice=Researcher)"
+label(data$x_ray_1_result_ext)="First radiological image read by external researcher not involved with the patient"
+label(data$x_ray_2)="X-ray 2 image"
+label(data$x_ray_2_date)="Date of X-ray 2"
+label(data$xray_result_2)="Interpretation of second radiological image"
+label(data$x_ray_2_reported_by___1)="Responsible for second radiological image interpretation (choice=Clinician)"
+label(data$x_ray_2_reported_by___2)="Responsible for second radiological image interpretation (choice=Radiology report)"
+label(data$x_ray_2_reported_by___3)="Responsible for second radiological image interpretation (choice=Researcher)"
+label(data$x_ray_2_result_ext)="Second radiological image read by external researcher not involved with the patient"
+label(data$x_ray_3)="X-ray 3 image"
+label(data$x_ray_3_date)="Date of X-ray 3"
+label(data$xray_result_3)="Interpretation of third radiological image"
+label(data$x_ray_3_reported_by___1)="Responsible for third radiological image interpretation (choice=Clinician)"
+label(data$x_ray_3_reported_by___2)="Responsible for third radiological image interpretation (choice=Radiology report)"
+label(data$x_ray_3_reported_by___3)="Responsible for third radiological image interpretation (choice=Researcher)"
+label(data$x_ray_3_result_ext)="Third radiological image read by external researcher not involved with the patient"
+label(data$lung_ct)="Lung CT scan image"
+label(data$lung_ct_date)="Date of Lung CT scan image"
+label(data$cardiac_img)="Cardiac imaging performed?"
+label(data$card_img_results)="Please, specify name of technique and findings"
+label(data$radiology_complete)="Complete?"
+label(data$oro_fluids)="Oral/orogastric fluids?"
+label(data$iv_fluids)="Intravenous fluids?"
+label(data$antiviral_cmyn)="Antiviral agent"
+label(data$antiviral_cmtrt___1)="Specify antiviral agent (choice=Ribavirin)"
+label(data$antiviral_cmtrt___2)="Specify antiviral agent (choice=Lopinavir/Ritonavir)"
+label(data$antiviral_cmtrt___3)="Specify antiviral agent (choice=Interferon-alpha)"
+label(data$antiviral_cmtrt___4)="Specify antiviral agent (choice=Interferon-beta)"
+label(data$antiviral_cmtrt___5)="Specify antiviral agent (choice=Neuraminidase inhibitors)"
+label(data$antiviral_cmtrt___6)="Specify antiviral agent (choice=Remdesivir)"
+label(data$antiviral_cmtrt___7)="Specify antiviral agent (choice=Chloroquine)"
+label(data$antiviral_cmtrt___8)="Specify antiviral agent (choice=Hydroxychloroquine)"
+label(data$antiviral_cmtrt___10)="Specify antiviral agent (choice=Anakinra)"
+label(data$antiviral_cmtrt___11)="Specify antiviral agent (choice=Ivermectin)"
+label(data$antiviral_cmtrt___9)="Specify antiviral agent (choice=Other)"
+label(data$antiviral_cmtype)="Specify other antiviral type"
+label(data$antiviral_days)="Days with antiviral"
+label(data$antibiotic_cmyn)="Antibiotic"
+label(data$iv_ab)="Intravenous antibiotic"
+label(data$type_iv_ab___0)="Type of intravenous antibiotic (choice=Ampicillin)"
+label(data$type_iv_ab___1)="Type of intravenous antibiotic (choice=Cefotaxime)"
+label(data$type_iv_ab___2)="Type of intravenous antibiotic (choice=Cefuroxime)"
+label(data$type_iv_ab___3)="Type of intravenous antibiotic (choice=Vancomycin)"
+label(data$type_iv_ab___4)="Type of intravenous antibiotic (choice=Meropenem)"
+label(data$type_iv_ab___5)="Type of intravenous antibiotic (choice=Clindamycin)"
+label(data$type_iv_ab___6)="Type of intravenous antibiotic (choice=Cefazolin)"
+label(data$type_iv_ab___9)="Type of intravenous antibiotic (choice=Ceftriaxone)"
+label(data$type_iv_ab___8)="Type of intravenous antibiotic (choice=Clavulanic acid)"
+label(data$type_iv_ab___7)="Type of intravenous antibiotic (choice=Other (specify))"
+label(data$other_iv_ab)="Other intravenous antibiotic"
+label(data$iv_ab_start_date)="Intravenous antibiotic start date"
+label(data$iv_ab_end_date)="Intravenous antibiotic end date"
+label(data$iv_ab_days)="Days of intravenous antibiotic (including start date)"
+label(data$o_ab)="Intrahospital oral antibiotic "
+label(data$type_o_ab___1)="Oral antibiotic type (choice=Amoxicillin)"
+label(data$type_o_ab___2)="Oral antibiotic type (choice=Amoxicillin-Clavulanic)"
+label(data$type_o_ab___3)="Oral antibiotic type (choice=Cefuroxime)"
+label(data$type_o_ab___4)="Oral antibiotic type (choice=Azithromycin)"
+label(data$type_o_ab___5)="Oral antibiotic type (choice=Erythromycin)"
+label(data$type_o_ab___6)="Oral antibiotic type (choice=Clindamycin)"
+label(data$type_o_ab___7)="Oral antibiotic type (choice=Cefadroxil)"
+label(data$type_o_ab___8)="Oral antibiotic type (choice=Other (specify))"
+label(data$other_o_ab)="Other oral antibiotic"
+label(data$o_ab_start_date)="Oral antibiotic start date"
+label(data$o_ab_end_date)="Oral antibiotic end date"
+label(data$o_ab_days)="Days of oral antibiotic (including start date)"
+label(data$azithromycin_or_erythromycin)="Oral Azithromycin or Erythromycin"
+label(data$azithromycin_or_erythromycin_2d)="Oral Azithromycin or Erythromycin (during the first 2 days, 36h)"
+label(data$corticost_cmyn)="Corticosteroids"
+label(data$corticost_cmtrt)="Specify corticosteroid type"
+label(data$corticost_cmdose)="Specify corticosteroid dose"
+label(data$corticost_cmroute)="Specify corticosteroid route"
+label(data$anti_inflammatory___1)="Anti-inflammatory treatment (choice=Ibuprofen)"
+label(data$anti_inflammatory___2)="Anti-inflammatory treatment (choice=Tocilizumab)"
+label(data$other_anti_inflammatory)="Other non-Steroidal Anti-Inflammatory Drugs (NSAIDs)"
+label(data$other_anti_inflammatory_type)="Please, specify name of other NSAIDs"
+label(data$iv_imglob)="Intravenous immune globulin"
+label(data$iv_imglob_dose)="Daily intravenous immune globulin dose"
+label(data$iv_imglob_days)="Days of intravenous immune globulin treatment"
+label(data$imod)="Immunomodulators"
+label(data$imod_type)="Please, specify name of immunomodulator"
+label(data$sys_anticoag)="Systemic anticoagulation"
+label(data$sys_anticoag_type)="Please, specify name of systemic anticoagulation agent"
+label(data$anti_mal)="Antimalarial agent"
+label(data$anti_mal_type)="Please, specify name of antimalarial agent"
+label(data$antifung_cmyn)="Antifungal agent"
+label(data$antifung_type)="Please, specify name of antifungal agent"
+label(data$experimental)="Experimental agent"
+label(data$experimental_type)="Please, specify name of experimental agent"
+label(data$other_sc2_treatments)="Other medicationsÂ directed to cure COVID-19"
+label(data$other_sc2_treatments_text)="Please, specify other COVID-19 treatments"
+label(data$vasopressors)="Inotropes/vasopressors"
+label(data$vasopressors_type___1)="Please, specify name of inotropes/vasopressors (choice=Adrenalin)"
+label(data$vasopressors_type___2)="Please, specify name of inotropes/vasopressors (choice=Noradrenaline)"
+label(data$vasopressors_type___3)="Please, specify name of inotropes/vasopressors (choice=Dopamine)"
+label(data$vasopressors_type___4)="Please, specify name of inotropes/vasopressors (choice=Dobutamine)"
+label(data$vasopressors_type___5)="Please, specify name of inotropes/vasopressors (choice=Milrinone)"
+label(data$vasopressors_type___6)="Please, specify name of inotropes/vasopressors (choice=Other (please, specify in comments))"
+label(data$ecmo)="Extracorporeal (ECMO) support"
+label(data$blood_trans)="Blood transfusion"
+label(data$medication_complete)="Complete?"
+label(data$dsterm)="Patient outcome"
+label(data$dsterm_other_text)="Please, specify which facility has been transferred to"
+label(data$excluded_reason)="Reason for exclusion"
+label(data$excluded_reason_ot)="Please specify reason for exclusion"
+label(data$final_dx_global_concept)="Final diagnosis, ICD-10-CM concept/s"
+label(data$final_dx_global_code)="Final diagnosis, ICD-10-CM code/s"
+label(data$final_dx_1)="Primary diagnosis related with COVID-19"
+label(data$related_1)="Is the primary diagnosis related to COVID-19?"
+label(data$final_dx_2)="Secondary diagnosis: comorbidity which conditioned this admission"
+label(data$related_2)="Is the secondary diagnosis related to COVID-19?"
+label(data$final_dx_3)="Other diagnosis"
+label(data$final_dx_4)="Other diagnosis"
+label(data$final_dx_5)="Other diagnosis"
+label(data$final_dx_6)="Other diagnosis"
+label(data$related_3)="Is the other diagnosis related to COVID-19?"
+label(data$outcome_complete)="Complete?"
+label(data$fvc_6m)="Forced vital capacity (FVC)"
+label(data$fev1_6m)="Forced expiratory volume (FEV1)"
+label(data$esp_ave_flux_6m)="Average expiratory flow"
+label(data$spirometry_complete)="Complete?"
+label(data$fever_ws)="Fever without source at emergency ward admission"
+label(data$lumbar_punc)="Lumbar puncture performed"
+label(data$csf_bacteria)="CSF bacterial culture"
+label(data$csf_baceria_type)="Bacteria isolated in CSF"
+label(data$csf_vhs)="CSF VHS PCR "
+label(data$csf_enterovirus)="CSF Enterovirus PCR "
+label(data$csf_sarscov2)="CSF SARSCoV2 PCR "
+label(data$csf_leuco)="Leucocytes in CSF"
+label(data$csf_neutro)="Percentage of Neutrophils CSF"
+label(data$csf_lympho)="Percentage of Lymphocytes in CSF"
+label(data$protein_csf)="Protein in CSF"
+label(data$glucose_csf)="Glucose in CSF"
+label(data$urine_collection)="Urine collection method"
+label(data$urine_dipstik)="Urine dipstick"
+label(data$urine_culture)="Urine culture"
+label(data$bacteria_urine)="Bacteria isolated in urine "
+label(data$final_diagnosis)="Final diagnosis after fever without source episode, ICD-10-CM concept"
+label(data$final_diagnosis_icd10)="Final diagnosis after fever without source episode, ICD-10-CM code"
+label(data$comments_fws)="Comments"
+label(data$fever_without_source_study_complete)="Complete?"
+label(data$qc_stage)="Current stage of quality control"
+label(data$qc_date)="Date of quality control stage change"
+label(data$first_analysis)="First Analysis"
+label(data$quality_control_complete)="Complete?"
+#Setting Units
+
+#Setting Factors(will create new variable for factors - cambiar a que no cree nuevas variables)
+data$hospital = factor(data$hospital,levels=c("1","2","3","4","5","6","7","8","9","10","11","12","13","15"))
+data$center_id_complete = factor(data$center_id_complete,levels=c("0","1","2"))
+data$sex = factor(data$sex,levels=c("1","2","3"))
+data$last_15 = factor(data$last_15,levels=c("1","2","3"))
+data$demographics_complete = factor(data$demographics_complete,levels=c("0","1","2"))
+data$symptoms_epi_travel = factor(data$symptoms_epi_travel,levels=c("1","2","3"))
+data$symptoms_epi_physical = factor(data$symptoms_epi_physical,levels=c("1","2","3"))
+data$symptoms_epi_healthfac = factor(data$symptoms_epi_healthfac,levels=c("1","2","3"))
+data$symptoms_epi_animal = factor(data$symptoms_epi_animal,levels=c("1","2","3"))
+data$symptoms_epi_comm = factor(data$symptoms_epi_comm,levels=c("1","2","3"))
+data$contact___1 = factor(data$contact___1,levels=c("0","1"))
+data$contact___2 = factor(data$contact___2,levels=c("0","1"))
+data$contact___3 = factor(data$contact___3,levels=c("0","1"))
+data$contact___4 = factor(data$contact___4,levels=c("0","1"))
+data$inclusion_criteria_complete = factor(data$inclusion_criteria_complete,levels=c("0","1","2"))
+data$anamnesis_complete = factor(data$anamnesis_complete,levels=c("0","1","2"))
+data$comorb = factor(data$comorb,levels=c("1","0"))
+data$chroniccard_mhyn = factor(data$chroniccard_mhyn,levels=c("1","2","3"))
+data$hypertension_mhyn = factor(data$hypertension_mhyn,levels=c("1","2","3"))
+data$chronicpul_mhyn = factor(data$chronicpul_mhyn,levels=c("1","2","3"))
+data$asthma_mhyn = factor(data$asthma_mhyn,levels=c("1","2","3"))
+data$tb_mhyn = factor(data$tb_mhyn,levels=c("1","2","3"))
+data$resp_inf_mhyn = factor(data$resp_inf_mhyn,levels=c("1","2","3"))
+data$renal_mhyn = factor(data$renal_mhyn,levels=c("1","2","3"))
+data$modliver_mhyn = factor(data$modliver_mhyn,levels=c("1","2","3"))
+data$mildliv_mhyn = factor(data$mildliv_mhyn,levels=c("1","2","3"))
+data$chronicneu_mhyn = factor(data$chronicneu_mhyn,levels=c("1","2","3"))
+data$malignantneo_mhyn = factor(data$malignantneo_mhyn,levels=c("1","2","3"))
+data$chronhaemo_mhyn = factor(data$chronhaemo_mhyn,levels=c("1","2","3"))
+data$aidshiv_mhyn = factor(data$aidshiv_mhyn,levels=c("1","2","3"))
+data$obesity_mhyn = factor(data$obesity_mhyn,levels=c("1","2","3"))
+data$diabetiscomp_mhyn = factor(data$diabetiscomp_mhyn,levels=c("1","2","3"))
+data$diabetes_mhyn = factor(data$diabetes_mhyn,levels=c("1","2","3"))
+data$inflammatory_mhyr = factor(data$inflammatory_mhyr,levels=c("1","2","3"))
+data$rheumatology_mhyr = factor(data$rheumatology_mhyr,levels=c("1","2","3"))
+data$kawa_mhyn = factor(data$kawa_mhyn,levels=c("1","2","3"))
+data$kawa_fam_mhyn = factor(data$kawa_fam_mhyn,levels=c("1","2","3"))
+data$dementia_mhyn = factor(data$dementia_mhyn,levels=c("1","2","3"))
+data$malnutrition_mhyn = factor(data$malnutrition_mhyn,levels=c("1","2","3"))
+data$other_mhyn = factor(data$other_mhyn,levels=c("1","2","3"))
+data$smoking_mhyn = factor(data$smoking_mhyn,levels=c("1","2","3"))
+data$immunosupressors = factor(data$immunosupressors,levels=c("1","0"))
+data$comorbidities_complete = factor(data$comorbidities_complete,levels=c("0","1","2"))
+data$influenza_full_regimen = factor(data$influenza_full_regimen,levels=c("1","0"))
+data$apsc_vcageind = factor(data$apsc_vcageind,levels=c("1","2","3"))
+data$vaccines_complete = factor(data$vaccines_complete,levels=c("0","1","2"))
+data$anthropometry_complete = factor(data$anthropometry_complete,levels=c("0","1","2"))
+data$dehydr = factor(data$dehydr,levels=c("1","2","3"))
+data$fever_ceoccur_v2 = factor(data$fever_ceoccur_v2,levels=c("1","2","3"))
+data$cough_ceoccur_v2 = factor(data$cough_ceoccur_v2,levels=c("1","2","3"))
+data$sorethroat_ceoccur_v2 = factor(data$sorethroat_ceoccur_v2,levels=c("1","2","3"))
+data$runnynose_ceoccur_v2 = factor(data$runnynose_ceoccur_v2,levels=c("1","2","3"))
+data$wheeze_ceoccur_v2 = factor(data$wheeze_ceoccur_v2,levels=c("1","2","3"))
+data$chestpain_ceoccur_v2 = factor(data$chestpain_ceoccur_v2,levels=c("1","2","3"))
+data$myalgia_ceoccur_v2 = factor(data$myalgia_ceoccur_v2,levels=c("1","2","3"))
+data$jointpain_ceoccur_v2 = factor(data$jointpain_ceoccur_v2,levels=c("1","2","3"))
+data$fatigue_ceoccur_v2 = factor(data$fatigue_ceoccur_v2,levels=c("1","2","3"))
+data$shortbreath_ceoccur_v2 = factor(data$shortbreath_ceoccur_v2,levels=c("1","2","3"))
+data$lowerchest_ceoccur_v2 = factor(data$lowerchest_ceoccur_v2,levels=c("1","2","3"))
+data$headache_ceoccur_v2 = factor(data$headache_ceoccur_v2,levels=c("1","2","3"))
+data$confusion_ceoccur_v2 = factor(data$confusion_ceoccur_v2,levels=c("1","2","3"))
+data$seizures_cecoccur_v2 = factor(data$seizures_cecoccur_v2,levels=c("1","2","3"))
+data$abdopain_ceoccur_v2 = factor(data$abdopain_ceoccur_v2,levels=c("1","2","3"))
+data$vomit_ceoccur_v2 = factor(data$vomit_ceoccur_v2,levels=c("1","2","3"))
+data$diarrhoea_ceoccur_v2 = factor(data$diarrhoea_ceoccur_v2,levels=c("1","2","3"))
+data$conjunct_ceoccur_v2 = factor(data$conjunct_ceoccur_v2,levels=c("1","2","3"))
+data$oral_inf = factor(data$oral_inf,levels=c("1","2","3"))
+data$pale_skin = factor(data$pale_skin,levels=c("1","2","3"))
+data$rash_ceoccur_v2 = factor(data$rash_ceoccur_v2,levels=c("1","2","3"))
+data$skinulcers_ceoccur_v2 = factor(data$skinulcers_ceoccur_v2,levels=c("1","2","3"))
+data$peri_inf = factor(data$peri_inf,levels=c("1","2","3"))
+data$lymp_ceoccur_v2 = factor(data$lymp_ceoccur_v2,levels=c("1","2","3"))
+data$bleed_ceoccur_v2 = factor(data$bleed_ceoccur_v2,levels=c("1","2","3"))
+data$cold_hands = factor(data$cold_hands,levels=c("1","2","3"))
+data$cap_refill = factor(data$cap_refill,levels=c("1","2","3"))
+data$sw_joints = factor(data$sw_joints,levels=c("1","2","3"))
+data$st_neck = factor(data$st_neck,levels=c("1","2","3"))
+data$hypo_flop = factor(data$hypo_flop,levels=c("1","2","3"))
+data$paralysis = factor(data$paralysis,levels=c("1","2","3"))
+data$shock = factor(data$shock,levels=c("1","2","3"))
+data$sens_alt = factor(data$sens_alt,levels=c("1","2","3"))
+data$admission_signs_and_symptoms_complete = factor(data$admission_signs_and_symptoms_complete,levels=c("0","1","2"))
+data$blood_tests_complete = factor(data$blood_tests_complete,levels=c("0","1","2"))
+data$pcr_cov2_1 = factor(data$pcr_cov2_1,levels=c("1","2","3","4"))
+data$pcr_cov2_2 = factor(data$pcr_cov2_2,levels=c("1","2","3","4"))
+data$pcr_cov2_3 = factor(data$pcr_cov2_3,levels=c("1","2","3","4"))
+data$pcr_cov2_4 = factor(data$pcr_cov2_4,levels=c("1","2","3","4"))
+data$rapid_ag_test_covid___1 = factor(data$rapid_ag_test_covid___1,levels=c("0","1"))
+data$rapid_ag_test_covid___2 = factor(data$rapid_ag_test_covid___2,levels=c("0","1"))
+data$rapid_ag_test_covid_1 = factor(data$rapid_ag_test_covid_1,levels=c("1","2"))
+data$rapid_ag_test_covid_2 = factor(data$rapid_ag_test_covid_2,levels=c("1","2"))
+data$virus_obtained_pcr_16 = factor(data$virus_obtained_pcr_16,levels=c("1","0"))
+data$pcr_types_virus_sr___1 = factor(data$pcr_types_virus_sr___1,levels=c("0","1"))
+data$pcr_types_virus_sr___2 = factor(data$pcr_types_virus_sr___2,levels=c("0","1"))
+data$pcr_types_virus_sr___3 = factor(data$pcr_types_virus_sr___3,levels=c("0","1"))
+data$pcr_types_virus_sr___4 = factor(data$pcr_types_virus_sr___4,levels=c("0","1"))
+data$pcr_types_virus_sr___5 = factor(data$pcr_types_virus_sr___5,levels=c("0","1"))
+data$pcr_types_virus_sr___6 = factor(data$pcr_types_virus_sr___6,levels=c("0","1"))
+data$pcr_types_virus_sr___7 = factor(data$pcr_types_virus_sr___7,levels=c("0","1"))
+data$pcr_types_virus_sr___8 = factor(data$pcr_types_virus_sr___8,levels=c("0","1"))
+data$pcr_types_virus_sr___9 = factor(data$pcr_types_virus_sr___9,levels=c("0","1"))
+data$pcr_types_virus_sr___10 = factor(data$pcr_types_virus_sr___10,levels=c("0","1"))
+data$pcr_types_virus_sr___11 = factor(data$pcr_types_virus_sr___11,levels=c("0","1"))
+data$pcr_types_virus_sr___12 = factor(data$pcr_types_virus_sr___12,levels=c("0","1"))
+data$pcr_types_virus_sr___13 = factor(data$pcr_types_virus_sr___13,levels=c("0","1"))
+data$pcr_types_virus_sr___14 = factor(data$pcr_types_virus_sr___14,levels=c("0","1"))
+data$pcr_types_virus_sr___15 = factor(data$pcr_types_virus_sr___15,levels=c("0","1"))
+data$pcr_types_virus_sr___16 = factor(data$pcr_types_virus_sr___16,levels=c("0","1"))
+data$pcr_atipical_sr = factor(data$pcr_atipical_sr,levels=c("1","0"))
+data$pcr_mn_sr = factor(data$pcr_mn_sr,levels=c("1","2","3","4"))
+data$pcr_cn_sr = factor(data$pcr_cn_sr,levels=c("1","2","3","4"))
+data$pcr_hib_sr = factor(data$pcr_hib_sr,levels=c("1","2","3","4"))
+data$pcr_leg_sr = factor(data$pcr_leg_sr,levels=c("1","2","3","4"))
+data$pcr_bordetella_sr = factor(data$pcr_bordetella_sr,levels=c("1","2","3","4"))
+data$anti_influenza = factor(data$anti_influenza,levels=c("1","2","3"))
+data$anti_rsv = factor(data$anti_rsv,levels=c("1","2","3"))
+data$res_samples = factor(data$res_samples,levels=c("1","0"))
+data$respiratory_secretion_microbiology_complete = factor(data$respiratory_secretion_microbiology_complete,levels=c("0","1","2"))
+data$first_sr_sc2 = factor(data$first_sr_sc2,levels=c("1","0","2","3"))
+data$first_sr_sc2_type = factor(data$first_sr_sc2_type,levels=c("1","2","3","4"))
+data$igm_sc2_1 = factor(data$igm_sc2_1,levels=c("1","2","3","4"))
+data$igg_sc2_1 = factor(data$igg_sc2_1,levels=c("1","2","3","4"))
+data$second_sr_sc2 = factor(data$second_sr_sc2,levels=c("1","0","2","3"))
+data$second_sr_sc2_type = factor(data$second_sr_sc2_type,levels=c("1","2","3","4"))
+data$igm_sc2_2 = factor(data$igm_sc2_2,levels=c("1","2","3","4"))
+data$igg_sc2_2 = factor(data$igg_sc2_2,levels=c("1","2","3","4"))
+data$blood_culture = factor(data$blood_culture,levels=c("1","0"))
+data$probable_bacterial_etiology_hemoculture = factor(data$probable_bacterial_etiology_hemoculture,levels=c("1","2","3","4"))
+data$other_bacteria_hemoculture = factor(data$other_bacteria_hemoculture,levels=c("1","0"))
+data$first_sr_atipical = factor(data$first_sr_atipical,levels=c("1","0","2","3"))
+data$serology1_igm_mn = factor(data$serology1_igm_mn,levels=c("1","2","3","4"))
+data$serology1_igg_mn = factor(data$serology1_igg_mn,levels=c("1","2","3","4"))
+data$serology1_igm_cn = factor(data$serology1_igm_cn,levels=c("1","2","3","4"))
+data$serology1_igg_cn = factor(data$serology1_igg_cn,levels=c("1","2","3","4"))
+data$second_sr_atipical = factor(data$second_sr_atipical,levels=c("1","0","2","3"))
+data$serology2_igm_mn = factor(data$serology2_igm_mn,levels=c("1","2","3","4"))
+data$serology2_igg_mn = factor(data$serology2_igg_mn,levels=c("1","2","3","4"))
+data$serology2_igm_cn = factor(data$serology2_igm_cn,levels=c("1","2","3","4"))
+data$serology2_igg_cn = factor(data$serology2_igg_cn,levels=c("1","2","3","4"))
+data$seroconversion_mn = factor(data$seroconversion_mn,levels=c("1","2","3","4"))
+data$blood_samples = factor(data$blood_samples,levels=c("1","0"))
+data$plasma_samples = factor(data$plasma_samples,levels=c("1","0"))
+data$blood_microbiology_complete = factor(data$blood_microbiology_complete,levels=c("0","1","2"))
+data$codetection = factor(data$codetection,levels=c("1","2","3","4"))
+data$codetecion_type = factor(data$codetecion_type,levels=c("1","2"))
+data$codetecion_complete = factor(data$codetecion_complete,levels=c("0","1","2"))
+data$thoracentesis_done = factor(data$thoracentesis_done,levels=c("1","0"))
+data$ag_pneumo_pf = factor(data$ag_pneumo_pf,levels=c("1","2","3"))
+data$pcr_pneumo_pf = factor(data$pcr_pneumo_pf,levels=c("1","2","3"))
+data$culture_pf = factor(data$culture_pf,levels=c("1","2"))
+data$cultured_bacteria_pf = factor(data$cultured_bacteria_pf,levels=c("1","2","3","4","5"))
+data$pleural_fluid_microbiology_complete = factor(data$pleural_fluid_microbiology_complete,levels=c("0","1","2"))
+data$oxygen_therapy = factor(data$oxygen_therapy,levels=c("1","0"))
+data$hft = factor(data$hft,levels=c("1","0"))
+data$cpap = factor(data$cpap,levels=c("1","0"))
+data$picu_admission = factor(data$picu_admission,levels=c("1","0"))
+data$mechanical_ventilation = factor(data$mechanical_ventilation,levels=c("1","0"))
+data$nimv = factor(data$nimv,levels=c("1","0"))
+data$imv = factor(data$imv,levels=c("1","0"))
+data$evolution_complete = factor(data$evolution_complete,levels=c("0","1","2"))
+data$complications = factor(data$complications,levels=c("1","0"))
+data$pleural_effusion = factor(data$pleural_effusion,levels=c("1","0"))
+data$effusion_type = factor(data$effusion_type,levels=c("1","2"))
+data$corticosteroids = factor(data$corticosteroids,levels=c("1","0"))
+data$pleural_drainage = factor(data$pleural_drainage,levels=c("1","0"))
+data$drainage_type = factor(data$drainage_type,levels=c("1","2","3"))
+data$pneumatocele_abscess = factor(data$pneumatocele_abscess,levels=c("1","0"))
+data$pneumothorax = factor(data$pneumothorax,levels=c("1","0"))
+data$cardio_comp = factor(data$cardio_comp,levels=c("1","0"))
+data$cardio_comp_myoc = factor(data$cardio_comp_myoc,levels=c("1","0"))
+data$cardio_comp_peri = factor(data$cardio_comp_peri,levels=c("1","0"))
+data$cardio_comp_valve = factor(data$cardio_comp_valve,levels=c("1","0"))
+data$cardio_comp_arry = factor(data$cardio_comp_arry,levels=c("1","0"))
+data$cardio_comp_cor = factor(data$cardio_comp_cor,levels=c("1","0"))
+data$cardio_comp_ane = factor(data$cardio_comp_ane,levels=c("1","0"))
+data$sepsis = factor(data$sepsis,levels=c("1","0"))
+data$renal_failure = factor(data$renal_failure,levels=c("1","0"))
+data$kawa = factor(data$kawa,levels=c("1","0"))
+data$complications_complete = factor(data$complications_complete,levels=c("0","1","2"))
+data$xray_result_1 = factor(data$xray_result_1,levels=c("1","2","3"))
+data$x_ray_1_reported_by___1 = factor(data$x_ray_1_reported_by___1,levels=c("0","1"))
+data$x_ray_1_reported_by___2 = factor(data$x_ray_1_reported_by___2,levels=c("0","1"))
+data$x_ray_1_reported_by___3 = factor(data$x_ray_1_reported_by___3,levels=c("0","1"))
+data$x_ray_1_result_ext = factor(data$x_ray_1_result_ext,levels=c("1","2","3"))
+data$xray_result_2 = factor(data$xray_result_2,levels=c("1","2","3"))
+data$x_ray_2_reported_by___1 = factor(data$x_ray_2_reported_by___1,levels=c("0","1"))
+data$x_ray_2_reported_by___2 = factor(data$x_ray_2_reported_by___2,levels=c("0","1"))
+data$x_ray_2_reported_by___3 = factor(data$x_ray_2_reported_by___3,levels=c("0","1"))
+data$x_ray_2_result_ext = factor(data$x_ray_2_result_ext,levels=c("1","2","3"))
+data$xray_result_3 = factor(data$xray_result_3,levels=c("1","2","3"))
+data$x_ray_3_reported_by___1 = factor(data$x_ray_3_reported_by___1,levels=c("0","1"))
+data$x_ray_3_reported_by___2 = factor(data$x_ray_3_reported_by___2,levels=c("0","1"))
+data$x_ray_3_reported_by___3 = factor(data$x_ray_3_reported_by___3,levels=c("0","1"))
+data$x_ray_3_result_ext = factor(data$x_ray_3_result_ext,levels=c("1","2","3"))
+data$cardiac_img = factor(data$cardiac_img,levels=c("1","2","3"))
+data$radiology_complete = factor(data$radiology_complete,levels=c("0","1","2"))
+data$oro_fluids = factor(data$oro_fluids,levels=c("1","2","3"))
+data$iv_fluids = factor(data$iv_fluids,levels=c("1","2","3"))
+data$antiviral_cmyn = factor(data$antiviral_cmyn,levels=c("1","2","3"))
+data$antiviral_cmtrt___1 = factor(data$antiviral_cmtrt___1,levels=c("0","1"))
+data$antiviral_cmtrt___2 = factor(data$antiviral_cmtrt___2,levels=c("0","1"))
+data$antiviral_cmtrt___3 = factor(data$antiviral_cmtrt___3,levels=c("0","1"))
+data$antiviral_cmtrt___4 = factor(data$antiviral_cmtrt___4,levels=c("0","1"))
+data$antiviral_cmtrt___5 = factor(data$antiviral_cmtrt___5,levels=c("0","1"))
+data$antiviral_cmtrt___6 = factor(data$antiviral_cmtrt___6,levels=c("0","1"))
+data$antiviral_cmtrt___7 = factor(data$antiviral_cmtrt___7,levels=c("0","1"))
+data$antiviral_cmtrt___8 = factor(data$antiviral_cmtrt___8,levels=c("0","1"))
+data$antiviral_cmtrt___10 = factor(data$antiviral_cmtrt___10,levels=c("0","1"))
+data$antiviral_cmtrt___11 = factor(data$antiviral_cmtrt___11,levels=c("0","1"))
+data$antiviral_cmtrt___9 = factor(data$antiviral_cmtrt___9,levels=c("0","1"))
+data$antibiotic_cmyn = factor(data$antibiotic_cmyn,levels=c("1","2","3"))
+data$iv_ab = factor(data$iv_ab,levels=c("1","2","3"))
+data$type_iv_ab___0 = factor(data$type_iv_ab___0,levels=c("0","1"))
+data$type_iv_ab___1 = factor(data$type_iv_ab___1,levels=c("0","1"))
+data$type_iv_ab___2 = factor(data$type_iv_ab___2,levels=c("0","1"))
+data$type_iv_ab___3 = factor(data$type_iv_ab___3,levels=c("0","1"))
+data$type_iv_ab___4 = factor(data$type_iv_ab___4,levels=c("0","1"))
+data$type_iv_ab___5 = factor(data$type_iv_ab___5,levels=c("0","1"))
+data$type_iv_ab___6 = factor(data$type_iv_ab___6,levels=c("0","1"))
+data$type_iv_ab___9 = factor(data$type_iv_ab___9,levels=c("0","1"))
+data$type_iv_ab___8 = factor(data$type_iv_ab___8,levels=c("0","1"))
+data$type_iv_ab___7 = factor(data$type_iv_ab___7,levels=c("0","1"))
+data$o_ab = factor(data$o_ab,levels=c("1","0"))
+data$type_o_ab___1 = factor(data$type_o_ab___1,levels=c("0","1"))
+data$type_o_ab___2 = factor(data$type_o_ab___2,levels=c("0","1"))
+data$type_o_ab___3 = factor(data$type_o_ab___3,levels=c("0","1"))
+data$type_o_ab___4 = factor(data$type_o_ab___4,levels=c("0","1"))
+data$type_o_ab___5 = factor(data$type_o_ab___5,levels=c("0","1"))
+data$type_o_ab___6 = factor(data$type_o_ab___6,levels=c("0","1"))
+data$type_o_ab___7 = factor(data$type_o_ab___7,levels=c("0","1"))
+data$type_o_ab___8 = factor(data$type_o_ab___8,levels=c("0","1"))
+data$corticost_cmyn = factor(data$corticost_cmyn,levels=c("1","2","3"))
+data$corticost_cmroute = factor(data$corticost_cmroute,levels=c("1","2","3"))
+data$anti_inflammatory___1 = factor(data$anti_inflammatory___1,levels=c("0","1"))
+data$anti_inflammatory___2 = factor(data$anti_inflammatory___2,levels=c("0","1"))
+data$other_anti_inflammatory = factor(data$other_anti_inflammatory,levels=c("1","2","3"))
+data$iv_imglob = factor(data$iv_imglob,levels=c("1","2","3"))
+data$imod = factor(data$imod,levels=c("1","2","3"))
+data$sys_anticoag = factor(data$sys_anticoag,levels=c("1","2","3"))
+data$anti_mal = factor(data$anti_mal,levels=c("1","2","3"))
+data$antifung_cmyn = factor(data$antifung_cmyn,levels=c("1","2","3"))
+data$experimental = factor(data$experimental,levels=c("1","2","3"))
+data$other_sc2_treatments = factor(data$other_sc2_treatments,levels=c("1","2","3"))
+data$vasopressors = factor(data$vasopressors,levels=c("1","2","3"))
+data$vasopressors_type___1 = factor(data$vasopressors_type___1,levels=c("0","1"))
+data$vasopressors_type___2 = factor(data$vasopressors_type___2,levels=c("0","1"))
+data$vasopressors_type___3 = factor(data$vasopressors_type___3,levels=c("0","1"))
+data$vasopressors_type___4 = factor(data$vasopressors_type___4,levels=c("0","1"))
+data$vasopressors_type___5 = factor(data$vasopressors_type___5,levels=c("0","1"))
+data$vasopressors_type___6 = factor(data$vasopressors_type___6,levels=c("0","1"))
+data$ecmo = factor(data$ecmo,levels=c("1","2","3"))
+data$blood_trans = factor(data$blood_trans,levels=c("1","2","3"))
+data$medication_complete = factor(data$medication_complete,levels=c("0","1","2"))
+data$dsterm = factor(data$dsterm,levels=c("1","2","3","4","5","8","6","7"))
+data$excluded_reason = factor(data$excluded_reason,levels=c("1","2","3"))
+data$final_dx_1 = factor(data$final_dx_1,levels=c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47"))
+data$related_1 = factor(data$related_1,levels=c("1","2"))
+data$final_dx_2 = factor(data$final_dx_2,levels=c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47"))
+data$related_2 = factor(data$related_2,levels=c("1","2","3"))
+data$final_dx_3 = factor(data$final_dx_3,levels=c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47"))
+data$final_dx_4 = factor(data$final_dx_4,levels=c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47"))
+data$final_dx_5 = factor(data$final_dx_5,levels=c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47"))
+data$final_dx_6 = factor(data$final_dx_6,levels=c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47"))
+data$related_3 = factor(data$related_3,levels=c("1","2","3"))
+data$outcome_complete = factor(data$outcome_complete,levels=c("0","1","2"))
+data$spirometry_complete = factor(data$spirometry_complete,levels=c("0","1","2"))
+data$fever_ws = factor(data$fever_ws,levels=c("1","0"))
+data$lumbar_punc = factor(data$lumbar_punc,levels=c("1","0"))
+data$csf_bacteria = factor(data$csf_bacteria,levels=c("1","0"))
+data$csf_vhs = factor(data$csf_vhs,levels=c("1","0","2"))
+data$csf_enterovirus = factor(data$csf_enterovirus,levels=c("1","0","2"))
+data$csf_sarscov2 = factor(data$csf_sarscov2,levels=c("1","0","2"))
+data$urine_collection = factor(data$urine_collection,levels=c("1","2","3","4","5"))
+data$urine_dipstik = factor(data$urine_dipstik,levels=c("1","2","3","4","5"))
+data$urine_culture = factor(data$urine_culture,levels=c("1","0","2"))
+data$fever_without_source_study_complete = factor(data$fever_without_source_study_complete,levels=c("0","1","2"))
+data$qc_stage = factor(data$qc_stage,levels=c("0","1","2","3","4"))
+data$first_analysis = factor(data$first_analysis,levels=c("1","0"))
+data$quality_control_complete = factor(data$quality_control_complete,levels=c("0","1","2"))
+
+levels(data$hospital)=c("Clínica Infantil Colsubsidio (CIC)","Hospital Universitario Fundación Santa Fé de Bogotá (HUFSFB)","Instituto Roosevelt (IR)","Ministerio de Salud de Colombia","Universidad de los Andes","Hospital de Nariño","San José Centro","San José Infantil","Hospital Militar","Clínica Colsanitas S.A. Sede Clínica Pediatrica","Clínica Colsanitas S.A. Sede Santa María del Lago","Clínica Colsanitas S.A. Sede Clínica Reina Sofía","Clínica Colsanitas S.A. Sede Clínica Universitaria 14, Colombia","Hospital Regional de la Orinoquia")
+levels(data$center_id_complete)=c("Incomplete","Unverified","Complete")
+levels(data$sex)=c("Male","Female","Not specified")
+levels(data$last_15)=c("Yes","No","Unknown")
+levels(data$demographics_complete)=c("Incomplete","Unverified","Complete")
+levels(data$symptoms_epi_travel)=c("Yes","No","Unknown")
+levels(data$symptoms_epi_physical)=c("Yes","No","Unknown")
+levels(data$symptoms_epi_healthfac)=c("Yes","No","Unknown")
+levels(data$symptoms_epi_animal)=c("Yes","No","Unknown")
+levels(data$symptoms_epi_comm)=c("Yes","No","Unknown")
+levels(data$contact___1)=c("Unchecked","Checked")
+levels(data$contact___2)=c("Unchecked","Checked")
+levels(data$contact___3)=c("Unchecked","Checked")
+levels(data$contact___4)=c("Unchecked","Checked")
+levels(data$inclusion_criteria_complete)=c("Incomplete","Unverified","Complete")
+levels(data$anamnesis_complete)=c("Incomplete","Unverified","Complete")
+levels(data$comorb)=c("Yes","No")
+levels(data$chroniccard_mhyn)=c("Yes","No","Unknown")
+levels(data$hypertension_mhyn)=c("Yes","No","Unknown")
+levels(data$chronicpul_mhyn)=c("Yes","No","Unknown")
+levels(data$asthma_mhyn)=c("Yes","No","Unknown")
+levels(data$tb_mhyn)=c("Yes","No","Unknown")
+levels(data$resp_inf_mhyn)=c("Yes","No","Unknown")
+levels(data$renal_mhyn)=c("Yes","No","Unknown")
+levels(data$modliver_mhyn)=c("Yes","No","Unknown")
+levels(data$mildliv_mhyn)=c("Yes","No","Unknown")
+levels(data$chronicneu_mhyn)=c("Yes","No","Unknown")
+levels(data$malignantneo_mhyn)=c("Yes","No","Unknown")
+levels(data$chronhaemo_mhyn)=c("Yes","No","Unknown")
+levels(data$aidshiv_mhyn)=c("Yes","No","Unknown")
+levels(data$obesity_mhyn)=c("Yes","No","Unknown")
+levels(data$diabetiscomp_mhyn)=c("Yes","No","Unknown")
+levels(data$diabetes_mhyn)=c("Yes","No","Unknown")
+levels(data$inflammatory_mhyr)=c("Yes","No","Unknown")
+levels(data$rheumatology_mhyr)=c("Yes","No","Unknown")
+levels(data$kawa_mhyn)=c("Yes","No","Unknown")
+levels(data$kawa_fam_mhyn)=c("Yes","No","Unknown")
+levels(data$dementia_mhyn)=c("Yes","No","Unknown")
+levels(data$malnutrition_mhyn)=c("Yes","No","Unknown")
+levels(data$other_mhyn)=c("Yes","No","Unknown")
+levels(data$smoking_mhyn)=c("Yes","Never Smoker","Former Smoker")
+levels(data$immunosupressors)=c("Yes","No")
+levels(data$comorbidities_complete)=c("Incomplete","Unverified","Complete")
+levels(data$influenza_full_regimen)=c("Yes","No")
+levels(data$apsc_vcageind)=c("Yes","No","Unknown")
+levels(data$vaccines_complete)=c("Incomplete","Unverified","Complete")
+levels(data$anthropometry_complete)=c("Incomplete","Unverified","Complete")
+levels(data$dehydr)=c("Severe","Some","None")
+levels(data$fever_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$cough_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$sorethroat_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$runnynose_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$wheeze_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$chestpain_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$myalgia_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$jointpain_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$fatigue_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$shortbreath_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$lowerchest_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$headache_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$confusion_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$seizures_cecoccur_v2)=c("Yes","No","Unknown")
+levels(data$abdopain_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$vomit_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$diarrhoea_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$conjunct_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$oral_inf)=c("Yes","No","Unknown")
+levels(data$pale_skin)=c("Yes","No","Unknown")
+levels(data$rash_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$skinulcers_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$peri_inf)=c("Yes","No","Unknown")
+levels(data$lymp_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$bleed_ceoccur_v2)=c("Yes","No","Unknown")
+levels(data$cold_hands)=c("Yes","No","Unknown")
+levels(data$cap_refill)=c("Yes","No","Unknown")
+levels(data$sw_joints)=c("Yes","No","Unknown")
+levels(data$st_neck)=c("Yes","No","Unknown")
+levels(data$hypo_flop)=c("Yes","No","Unknown")
+levels(data$paralysis)=c("Yes","No","Unknown")
+levels(data$shock)=c("Yes","No","Unknown")
+levels(data$sens_alt)=c("Yes","No","Unknown")
+levels(data$admission_signs_and_symptoms_complete)=c("Incomplete","Unverified","Complete")
+levels(data$blood_tests_complete)=c("Incomplete","Unverified","Complete")
+levels(data$pcr_cov2_1)=c("Positive","Negative","Pending","Unavailable")
+levels(data$pcr_cov2_2)=c("Positive","Negative","Pending","Unavailable")
+levels(data$pcr_cov2_3)=c("Positive","Negative","Pending","Unavailable")
+levels(data$pcr_cov2_4)=c("Positive","Negative","Pending","Unavailable")
+levels(data$rapid_ag_test_covid___1)=c("Unchecked","Checked")
+levels(data$rapid_ag_test_covid___2)=c("Unchecked","Checked")
+levels(data$rapid_ag_test_covid_1)=c("Positive","Negative")
+levels(data$rapid_ag_test_covid_2)=c("Positive","Negative")
+levels(data$virus_obtained_pcr_16)=c("Yes","No")
+levels(data$pcr_types_virus_sr___1)=c("Unchecked","Checked")
+levels(data$pcr_types_virus_sr___2)=c("Unchecked","Checked")
+levels(data$pcr_types_virus_sr___3)=c("Unchecked","Checked")
+levels(data$pcr_types_virus_sr___4)=c("Unchecked","Checked")
+levels(data$pcr_types_virus_sr___5)=c("Unchecked","Checked")
+levels(data$pcr_types_virus_sr___6)=c("Unchecked","Checked")
+levels(data$pcr_types_virus_sr___7)=c("Unchecked","Checked")
+levels(data$pcr_types_virus_sr___8)=c("Unchecked","Checked")
+levels(data$pcr_types_virus_sr___9)=c("Unchecked","Checked")
+levels(data$pcr_types_virus_sr___10)=c("Unchecked","Checked")
+levels(data$pcr_types_virus_sr___11)=c("Unchecked","Checked")
+levels(data$pcr_types_virus_sr___12)=c("Unchecked","Checked")
+levels(data$pcr_types_virus_sr___13)=c("Unchecked","Checked")
+levels(data$pcr_types_virus_sr___14)=c("Unchecked","Checked")
+levels(data$pcr_types_virus_sr___15)=c("Unchecked","Checked")
+levels(data$pcr_types_virus_sr___16)=c("Unchecked","Checked")
+levels(data$pcr_atipical_sr)=c("Yes","No")
+levels(data$pcr_mn_sr)=c("Positive","Negative","Pending","Unavailable")
+levels(data$pcr_cn_sr)=c("Positive","Negative","Pending","Unavailable")
+levels(data$pcr_hib_sr)=c("Positive","Negative","Pending","Unavailable")
+levels(data$pcr_leg_sr)=c("Positive","Negative","Pending","Unavailable")
+levels(data$pcr_bordetella_sr)=c("Positive","Negative","Pending","Unavailable")
+levels(data$anti_influenza)=c("Positive","Negative","Not performed")
+levels(data$anti_rsv)=c("Positive","Negative","Not performed")
+levels(data$res_samples)=c("Yes","No")
+levels(data$respiratory_secretion_microbiology_complete)=c("Incomplete","Unverified","Complete")
+levels(data$first_sr_sc2)=c("Yes","No","Sample collection pending","Results pending")
+levels(data$first_sr_sc2_type)=c("Rapid test","ELISA","Neutralization test","Other")
+levels(data$igm_sc2_1)=c("Positive","Negative","Pending","Unavailable")
+levels(data$igg_sc2_1)=c("Positive","Negative","Pending","Unavailable")
+levels(data$second_sr_sc2)=c("Yes","No","Sample collection pending","Results pending")
+levels(data$second_sr_sc2_type)=c("Rapid test","ELISA","Neutralization test","Other")
+levels(data$igm_sc2_2)=c("Positive","Negative","Pending","Unavailable")
+levels(data$igg_sc2_2)=c("Positive","Negative","Pending","Unavailable")
+levels(data$blood_culture)=c("Yes","No")
+levels(data$probable_bacterial_etiology_hemoculture)=c("S. pneumoniae","S. aureus","S. pyogenes","Other (specify)")
+levels(data$other_bacteria_hemoculture)=c("Yes","No")
+levels(data$first_sr_atipical)=c("Yes","No","Sample collection pending","Results pending")
+levels(data$serology1_igm_mn)=c("Positive","Negative","Pending","Unavailable")
+levels(data$serology1_igg_mn)=c("Positive","Negative","Pending","Unavailable")
+levels(data$serology1_igm_cn)=c("Positive","Negative","Pending","Unavailable")
+levels(data$serology1_igg_cn)=c("Positive","Negative","Pending","Unavailable")
+levels(data$second_sr_atipical)=c("Yes","No","Sample collection pending","Results pending")
+levels(data$serology2_igm_mn)=c("Positive","Negative","Pending","Unavailable")
+levels(data$serology2_igg_mn)=c("Positive","Negative","Pending","Unavailable")
+levels(data$serology2_igm_cn)=c("Positive","Negative","Pending","Unavailable")
+levels(data$serology2_igg_cn)=c("Positive","Negative","Pending","Unavailable")
+levels(data$seroconversion_mn)=c("Yes","No","Pending","Unavailable")
+levels(data$blood_samples)=c("Yes","No")
+levels(data$plasma_samples)=c("Yes","No")
+levels(data$blood_microbiology_complete)=c("Incomplete","Unverified","Complete")
+levels(data$codetection)=c("Yes","No","Pending","Unknown due to lack of microbiological data")
+levels(data$codetecion_type)=c("Virus-Virus","Virus-Bacteria")
+levels(data$codetecion_complete)=c("Incomplete","Unverified","Complete")
+levels(data$thoracentesis_done)=c("Yes","No")
+levels(data$ag_pneumo_pf)=c("Positive","Negative","Not performed")
+levels(data$pcr_pneumo_pf)=c("Positive","Negative","Not performed")
+levels(data$culture_pf)=c("Positive","Negative")
+levels(data$cultured_bacteria_pf)=c("Pneumococcus","S. pyogenes","S. aureus","Haemophilus influenzae","Other")
+levels(data$pleural_fluid_microbiology_complete)=c("Incomplete","Unverified","Complete")
+levels(data$oxygen_therapy)=c("Yes","No")
+levels(data$hft)=c("Yes","No")
+levels(data$cpap)=c("Yes","No")
+levels(data$picu_admission)=c("Yes","No")
+levels(data$mechanical_ventilation)=c("Yes","No")
+levels(data$nimv)=c("Yes","No")
+levels(data$imv)=c("Yes","No")
+levels(data$evolution_complete)=c("Incomplete","Unverified","Complete")
+levels(data$complications)=c("Yes","No")
+levels(data$pleural_effusion)=c("Yes","No")
+levels(data$effusion_type)=c("Not complicated","Complicated (pH< 7 and/or partitions)")
+levels(data$corticosteroids)=c("Yes","No")
+levels(data$pleural_drainage)=c("Yes","No")
+levels(data$drainage_type)=c("Pleural tube","VATS","Evacuating thoracentesis only")
+levels(data$pneumatocele_abscess)=c("Yes","No")
+levels(data$pneumothorax)=c("Yes","No")
+levels(data$cardio_comp)=c("Yes","No")
+levels(data$cardio_comp_myoc)=c("Yes","No")
+levels(data$cardio_comp_peri)=c("Yes","No")
+levels(data$cardio_comp_valve)=c("Yes","No")
+levels(data$cardio_comp_arry)=c("Yes","No")
+levels(data$cardio_comp_cor)=c("Yes","No")
+levels(data$cardio_comp_ane)=c("Yes","No")
+levels(data$sepsis)=c("Yes","No")
+levels(data$renal_failure)=c("Yes","No")
+levels(data$kawa)=c("Yes","No")
+levels(data$complications_complete)=c("Incomplete","Unverified","Complete")
+levels(data$xray_result_1)=c("Condensation","Other infiltrates","Normal")
+levels(data$x_ray_1_reported_by___1)=c("Unchecked","Checked")
+levels(data$x_ray_1_reported_by___2)=c("Unchecked","Checked")
+levels(data$x_ray_1_reported_by___3)=c("Unchecked","Checked")
+levels(data$x_ray_1_result_ext)=c("Condensation","Other infiltrates","Normal")
+levels(data$xray_result_2)=c("Condensation","Other infiltrates","Normal")
+levels(data$x_ray_2_reported_by___1)=c("Unchecked","Checked")
+levels(data$x_ray_2_reported_by___2)=c("Unchecked","Checked")
+levels(data$x_ray_2_reported_by___3)=c("Unchecked","Checked")
+levels(data$x_ray_2_result_ext)=c("Condensation","Other infiltrates","Normal")
+levels(data$xray_result_3)=c("Condensation","Other infiltrates","Normal")
+levels(data$x_ray_3_reported_by___1)=c("Unchecked","Checked")
+levels(data$x_ray_3_reported_by___2)=c("Unchecked","Checked")
+levels(data$x_ray_3_reported_by___3)=c("Unchecked","Checked")
+levels(data$x_ray_3_result_ext)=c("Condensation","Other infiltrates","Normal")
+levels(data$cardiac_img)=c("Yes","No","Unknown")
+levels(data$radiology_complete)=c("Incomplete","Unverified","Complete")
+levels(data$oro_fluids)=c("Yes","No","Unknown")
+levels(data$iv_fluids)=c("Yes","No","Unknown")
+levels(data$antiviral_cmyn)=c("Yes","No","Unknown")
+levels(data$antiviral_cmtrt___1)=c("Unchecked","Checked")
+levels(data$antiviral_cmtrt___2)=c("Unchecked","Checked")
+levels(data$antiviral_cmtrt___3)=c("Unchecked","Checked")
+levels(data$antiviral_cmtrt___4)=c("Unchecked","Checked")
+levels(data$antiviral_cmtrt___5)=c("Unchecked","Checked")
+levels(data$antiviral_cmtrt___6)=c("Unchecked","Checked")
+levels(data$antiviral_cmtrt___7)=c("Unchecked","Checked")
+levels(data$antiviral_cmtrt___8)=c("Unchecked","Checked")
+levels(data$antiviral_cmtrt___10)=c("Unchecked","Checked")
+levels(data$antiviral_cmtrt___11)=c("Unchecked","Checked")
+levels(data$antiviral_cmtrt___9)=c("Unchecked","Checked")
+levels(data$antibiotic_cmyn)=c("Yes","No","Unknown")
+levels(data$iv_ab)=c("Yes","No","Data unavailable")
+levels(data$type_iv_ab___0)=c("Unchecked","Checked")
+levels(data$type_iv_ab___1)=c("Unchecked","Checked")
+levels(data$type_iv_ab___2)=c("Unchecked","Checked")
+levels(data$type_iv_ab___3)=c("Unchecked","Checked")
+levels(data$type_iv_ab___4)=c("Unchecked","Checked")
+levels(data$type_iv_ab___5)=c("Unchecked","Checked")
+levels(data$type_iv_ab___6)=c("Unchecked","Checked")
+levels(data$type_iv_ab___9)=c("Unchecked","Checked")
+levels(data$type_iv_ab___8)=c("Unchecked","Checked")
+levels(data$type_iv_ab___7)=c("Unchecked","Checked")
+levels(data$o_ab)=c("Yes","No")
+levels(data$type_o_ab___1)=c("Unchecked","Checked")
+levels(data$type_o_ab___2)=c("Unchecked","Checked")
+levels(data$type_o_ab___3)=c("Unchecked","Checked")
+levels(data$type_o_ab___4)=c("Unchecked","Checked")
+levels(data$type_o_ab___5)=c("Unchecked","Checked")
+levels(data$type_o_ab___6)=c("Unchecked","Checked")
+levels(data$type_o_ab___7)=c("Unchecked","Checked")
+levels(data$type_o_ab___8)=c("Unchecked","Checked")
+levels(data$corticost_cmyn)=c("Yes","No","Unknown")
+levels(data$corticost_cmroute)=c("Oral","Intravenous","Inhaled")
+levels(data$anti_inflammatory___1)=c("Unchecked","Checked")
+levels(data$anti_inflammatory___2)=c("Unchecked","Checked")
+levels(data$other_anti_inflammatory)=c("Yes","No","Unknown")
+levels(data$iv_imglob)=c("Yes","No","Unknown")
+levels(data$imod)=c("Yes","No","Unknown")
+levels(data$sys_anticoag)=c("Yes","No","Unknown")
+levels(data$anti_mal)=c("Yes","No","Unknown")
+levels(data$antifung_cmyn)=c("Yes","No","Unknown")
+levels(data$experimental)=c("Yes","No","Unknown")
+levels(data$other_sc2_treatments)=c("Yes","No","Unknown")
+levels(data$vasopressors)=c("Yes","No","Unknown")
+levels(data$vasopressors_type___1)=c("Unchecked","Checked")
+levels(data$vasopressors_type___2)=c("Unchecked","Checked")
+levels(data$vasopressors_type___3)=c("Unchecked","Checked")
+levels(data$vasopressors_type___4)=c("Unchecked","Checked")
+levels(data$vasopressors_type___5)=c("Unchecked","Checked")
+levels(data$vasopressors_type___6)=c("Unchecked","Checked")
+levels(data$ecmo)=c("Yes","No","Unknown")
+levels(data$blood_trans)=c("Yes","No","Unknown")
+levels(data$medication_complete)=c("Incomplete","Unverified","Complete")
+levels(data$dsterm)=c("Discharged alive (not hospitalized)","Discharged alive after hospitalization","Transfer to other facility","Death","Palliative discharge","Currently hospitalized","Unknown","Excluded")
+levels(data$excluded_reason)=c("Not fulfilled inclusion criteria","Withdrawal of consent","Other")
+levels(data$final_dx_1)=c("Abdominal pain","Abscess","Acquired Hemolytic Anaemia","Adenitis","Appendicitis / Peritonitis","Asthma flare","Asymptomatic","Asymptomatic infection","Bacteriemia","Bronchiolitis","Bronchitis","Dehydration","Diabetic debut","Fever without a source","Flu-like syndrome","Gastroenteritis","Gastroenteritis (other)","Hematemesis","Hepatitis","HFH","Hypertension","Inflammatory syndrome","Jaundice","Kawasaki","Kidney stone","Liver failure","Mastoiditis","Neoplasm","Nephritis syndrome","Pneumonia","Psychiatric admission","Pyelonephritis","Salmonellosis","Seizures","Sepsis","Skin/mucosae problems","Social admission","Thrombosis","Trauma","URTI","UTI","Whooping cough","Immunosuppression","Chronic disease","Admission for observation due to unspecified risk","Neonate","Shock")
+levels(data$related_1)=c("Related","Unclear")
+levels(data$final_dx_2)=c("Abdominal pain","Abscess","Acquired Hemolytic Anaemia","Adenitis","Appendicitis / Peritonitis","Asthma flare","Asymptomatic","Asymptomatic infection","Bacteriemia","Bronchiolitis","Bronchitis","Dehydration","Diabetic debut","Fever without a source","Flu-like syndrome","Gastroenteritis","Gastroenteritis (other)","Hematemesis","Hepatitis","HFH","Hypertension","Inflammatory syndrome","Jaundice","Kawasaki","Kidney stone","Liver failure","Mastoiditis","Neoplasm","Nephritis syndrome","Pneumonia","Psychiatric admission","Pyelonephritis","Salmonellosis","Seizures","Sepsis","Skin/mucosae problems","Social admission","Thrombosis","Trauma","URTI","UTI","Whooping cough","Immunosuppression","Chronic disease","Admission for observation due to unspecified risk","Neonate","Shock")
+levels(data$related_2)=c("Related","Not Related","Unclear")
+levels(data$final_dx_3)=c("Abdominal pain","Abscess","Acquired Hemolytic Anaemia","Adenitis","Appendicitis / Peritonitis","Asthma flare","Asymptomatic","Asymptomatic infection","Bacteriemia","Bronchiolitis","Bronchitis","Dehydration","Diabetic debut","Fever without a source","Flu-like syndrome","Gastroenteritis","Gastroenteritis (other)","Hematemesis","Hepatitis","HFH","Hypertension","Inflammatory syndrome","Jaundice","Kawasaki","Kidney stone","Liver failure","Mastoiditis","Neoplasm","Nephritis syndrome","Pneumonia","Psychiatric admission","Pyelonephritis","Salmonellosis","Seizures","Sepsis","Skin/mucosae problems","Social admission","Thrombosis","Trauma","URTI","UTI","Whooping cough","Immunosuppression","Chronic disease","Admission for observation due to unspecified risk","Neonate","Shock")
+levels(data$final_dx_4)=c("Abdominal pain","Abscess","Acquired Hemolytic Anaemia","Adenitis","Appendicitis / Peritonitis","Asthma flare","Asymptomatic","Asymptomatic infection","Bacteriemia","Bronchiolitis","Bronchitis","Dehydration","Diabetic debut","Fever without a source","Flu-like syndrome","Gastroenteritis","Gastroenteritis (other)","Hematemesis","Hepatitis","HFH","Hypertension","Inflammatory syndrome","Jaundice","Kawasaki","Kidney stone","Liver failure","Mastoiditis","Neoplasm","Nephritis syndrome","Pneumonia","Psychiatric admission","Pyelonephritis","Salmonellosis","Seizures","Sepsis","Skin/mucosae problems","Social admission","Thrombosis","Trauma","URTI","UTI","Whooping cough","Immunosuppression","Chronic disease","Admission for observation due to unspecified risk","Neonate","Shock")
+levels(data$final_dx_5)=c("Abdominal pain","Abscess","Acquired Hemolytic Anaemia","Adenitis","Appendicitis / Peritonitis","Asthma flare","Asymptomatic","Asymptomatic infection","Bacteriemia","Bronchiolitis","Bronchitis","Dehydration","Diabetic debut","Fever without a source","Flu-like syndrome","Gastroenteritis","Gastroenteritis (other)","Hematemesis","Hepatitis","HFH","Hypertension","Inflammatory syndrome","Jaundice","Kawasaki","Kidney stone","Liver failure","Mastoiditis","Neoplasm","Nephritis syndrome","Pneumonia","Psychiatric admission","Pyelonephritis","Salmonellosis","Seizures","Sepsis","Skin/mucosae problems","Social admission","Thrombosis","Trauma","URTI","UTI","Whooping cough","Immunosuppression","Chronic disease","Admission for observation due to unspecified risk","Neonate","Shock")
+levels(data$final_dx_6)=c("Abdominal pain","Abscess","Acquired Hemolytic Anaemia","Adenitis","Appendicitis / Peritonitis","Asthma flare","Asymptomatic","Asymptomatic infection","Bacteriemia","Bronchiolitis","Bronchitis","Dehydration","Diabetic debut","Fever without a source","Flu-like syndrome","Gastroenteritis","Gastroenteritis (other)","Hematemesis","Hepatitis","HFH","Hypertension","Inflammatory syndrome","Jaundice","Kawasaki","Kidney stone","Liver failure","Mastoiditis","Neoplasm","Nephritis syndrome","Pneumonia","Psychiatric admission","Pyelonephritis","Salmonellosis","Seizures","Sepsis","Skin/mucosae problems","Social admission","Thrombosis","Trauma","URTI","UTI","Whooping cough","Immunosuppression","Chronic disease","Admission for observation due to unspecified risk","Neonate","Shock")
+levels(data$related_3)=c("Related","Not Related","Unclear")
+levels(data$outcome_complete)=c("Incomplete","Unverified","Complete")
+levels(data$spirometry_complete)=c("Incomplete","Unverified","Complete")
+levels(data$fever_ws)=c("Yes","No")
+levels(data$lumbar_punc)=c("Yes","No")
+levels(data$csf_bacteria)=c("Positive","Negative")
+levels(data$csf_vhs)=c("Positive","Negative","Not performed")
+levels(data$csf_enterovirus)=c("Positive","Negative","Not performed")
+levels(data$csf_sarscov2)=c("Positive","Negative","Not performed")
+levels(data$urine_collection)=c("Catheter","Tapping / spontaneus","Perineal bag","Puncture","Urine collection not performed")
+levels(data$urine_dipstik)=c("Leucocytes","Nitrites","Leucocytes + Nitrites","Normal","Not performed")
+levels(data$urine_culture)=c("Positive","Negative","Not performed")
+levels(data$fever_without_source_study_complete)=c("Incomplete","Unverified","Complete")
+levels(data$qc_stage)=c("Not started","Clinical quality control performed, waiting for answers to clinical queries","Clinical queries resolved, pending data quality control","Data quality control performed, waiting for answers to data queries","Quality control completed")
+levels(data$first_analysis)=c("Yes","No")
+levels(data$quality_control_complete)=c("Incomplete","Unverified","Complete")
+
+#Arreglar formato de variables fecha: 
+
+#fechas <- data %>% select(contains("date"))
+data$admission_date %<>% ymd()
+data$patient_birth_date %<>% ymd()
+data$fever_start_date %<>%ymd()
+data$pcr_cov2_1_date %<>% ymd()
+data$pcr_cov2_2_date %<>% ymd()
+data$pcr_cov2_3_date %<>% ymd()
+data$pcr_cov2_4_date %<>% ymd()
+data$first_sr_sc2_date %<>% ymd()
+data$second_sr_sc2_date %<>% ymd()
+data$date_ser_1 %<>% ymd()
+data$date_ser_2 %<>% ymd()
+data$fever_end_date %<>% ymd()
+data$oxigen_start_date %<>% ymd()
+data$oxigen_end_date %<>% ymd()
+data$hft_start_date %<>% ymd()
+data$hft_end_date %<>% ymd()
+data$cpap_start_date %<>% ymd()
+data$cpap_end_date %<>% ymd()
+data$picu_admission_date %<>% ymd()
+data$picu_discharge_date %<>% ymd()
+data$nimv_start_date %<>% ymd()
+data$nimv_end_date %<>% ymd()
+data$imv_start_date %<>% ymd()
+data$imv_end_date %<>% ymd()
+data$discharge_date %<>% ymd()
+data$x_ray_1_date %<>% ymd()
+data$x_ray_2_date %<>% ymd()
+data$x_ray_3_date %<>% ymd()
+data$lung_ct_date %<>% ymd()
+data$iv_ab_start_date %<>% ymd()
+data$iv_ab_end_date %<>% ymd()
+data$o_ab_start_date %<>% ymd()
+data$o_ab_end_date %<>% ymd()
+data$qc_date %<>% ymd()
+
+#Numericas: 
+data$age_months%<>%as.numeric()
+
+
+#Filtrar base de datos: revisar únicamente datos que tienen "complete"
+#completos<-data %>% filter(center_id_complete =="Complete" & demographics_complete =="Complete" & inclusion_criteria_complete =="Complete" & anamnesis_complete =="Complete" & comorbidities_complete =="Complete" & vaccines_complete =="Complete" & anthropometry_complete =="Complete" & admission_signs_and_symptoms_complete == "Complete" & blood_tests_complete =="Complete" & respiratory_secretion_microbiology_complete == "Complete" & blood_microbiology_complete == "Complete" & codetecion_complete == "Complete" & pleural_fluid_microbiology_complete =="Complete" & evolution_complete == "Complete" & complications_complete == "Complete" & radiology_complete == "Complete" & medication_complete == "Complete" & outcome_complete == "Complete" & fever_without_source_study_complete == "Complete")
+
+#Solo correr para hospitales diferentes de los andes
+#data %<>% filter(hospital != "Hospital Universitario Fundación Santa Fé de Bogotá (HUFSFB)" & hospital !="Clínica Infantil Colsubsidio (CIC)" & hospital != "Instituto Roosevelt (IR)")
+
+##"Clínica Infantil Colsubsidio (CIC)","Hospital Universitario Fundación Santa Fé de Bogotá (HUFSFB)","Instituto Roosevelt (IR)","Ministerio de Salud de Colombia","Universidad de los Andes","Hospital de Nariño","San José Centro","San José Infantil","Hospital Militar","Clínica Colsanitas S.A. Sede Clínica Pediatrica","Clínica Colsanitas S.A. Sede Santa María del Lago","Clínica Colsanitas S.A. Sede Clínica Reina Sofía","Clínica Colsanitas S.A. Sede Clínica Universitaria 14, Colombia","Hospital Regional de la Orinoquia"
+
+#data %<>% filter(hospital == "Nombre hospital")
+data %<>% filter(is.na(hospital))
+
+```
+
+
+# Form: Center_id
+
+**Verificar si hay variables missing.**
+
+```{r center_id, echo = FALSE}
+#Crear data frame con variables de center ID
+  pos_i_center_id <- which(colnames(data)=="record")
+  pos_f_center_id <- which(colnames(data)=="center_id_complete")
+  center_id <- data[,c(pos_i_center_id:pos_f_center_id)] 
+#Diagnóstico de: nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+diag_center_id<-diagnose(center_id)
+
+#Filtrar y visualizar variables con valor missing
+  diag_center_id %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+     
+    kable()%>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+  
+#Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_center_id[diag_center_id$missing_count > 0,1][,1])
+missing <- c(missing[,1]) 
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.))) %>%
+  kable()%>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")
+
+
+  
+
+```
+
+# Form: Demographics
+
+**Verificar si hay variables missing.**
+
+```{r demo1, echo=FALSE}
+#Crear data frame con variables de demographics
+  pos_i_demo <- which(colnames(data)=="patient_birth_date")
+  pos_f_demo <- which(colnames(data)=="demographics_complete")
+  demo <- data[,c(pos_i_demo:pos_f_demo)]
+  
+#Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_demo<-diagnose(demo)
+
+#Filtrar y visualizar variables con valor missing
+  diag_demo %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    
+    kable()%>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+
+#Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_demo[diag_demo$missing_count > 0,1][,1])
+missing <- c(missing[,1]) 
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.))) %>%
+  kable()%>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")
+
+```
+
+
+# Form: Inclusion criteria
+
+**Verificar si hay variables missing.**
+
+Si symptoms_epi_physical = NO, entonces index_case = NA. 
+
+```{r incl_crit, echo=FALSE}
+
+#Generar data frame solo con variables del forms de inclusion criteria
+pos_i_incl_crit <- which(colnames(data)=="symptoms_epi_travel")
+pos_f_incl_crit <- which(colnames(data)=="inclusion_criteria_complete")
+incl_crit <- data[,c(pos_i_incl_crit:pos_f_incl_crit)]
+  
+#Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_crit<-diagnose(incl_crit)
+ 
+#Filtrar y visualizar variables con valor missing
+  diag_incl_crit %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable()%>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+
+#Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_crit[diag_incl_crit$missing_count > 0,1][,1])
+missing <- c(missing[,1]) 
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name,symptoms_epi_physical, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.))) %>%
+  kable()%>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")
+        
+
+
+```
+
+# Form: Anamnesis
+
+**Verificar si hay variables missing.**
+
+Si fever_ceoccur_v2 = No, entonces fever_start_date,	fever_days y	fever_days_total = NA.
+
+```{r anamnesis, echo=FALSE}
+#Data frame con variables de anamnesis
+  pos_i_anam <- which(colnames(data)=="fever_start_date")
+  pos_f_anam <- which(colnames(data)=="anamnesis_complete")
+  anam <- data[,c(pos_i_anam:pos_f_anam)]
+  
+  #Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_anam<-diagnose(anam)
+
+  #Filtrar y visualizar variables con valor missing
+  diag_incl_anam %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable()%>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+  
+  #Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_anam[diag_incl_anam$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, fever_ceoccur_v2,all_of(missing)) %>%
+  filter_all(any_vars(is.na(.))) %>%
+  kable()%>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")
+
+```
+
+# Form: Comorbidities
+
+**Verificar si hay variables missing.**: 
+
+Excepciones:
+Si inf_reum_type es " " (no tiene información) verificar que inflammatory_mhyr y rheumatology_mhyr esten marcadas como No. 
+Si otherrisktext es NA verificar que other_mhyn este marcada como No. 
+Si smoking_mhyn es NA verificar que other_mhyn este marcada como No
+
+```{r, echo=FALSE}
+#Data frame con variables de comorbidities
+  pos_i_comorb <- which(colnames(data)=="comorb")
+  pos_f_comorb <- which(colnames(data)=="comorbidities_complete")
+  comorb <- data[,c(pos_i_comorb:pos_f_comorb)]
+  
+#Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_comorb<-diagnose(comorb)
+  
+#Filtrar y visualizar variables con valor missing
+  diag_incl_comorb %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable() %>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+
+  
+
+#Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_comorb[diag_incl_comorb$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, inf_reum_type, otherrisktext, other_mhyn,inflammatory_mhyr, rheumatology_mhyr, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.) | other_mhyn=="No" | inflammatory_mhyr != "Yes" | rheumatology_mhyr !="Yes")) %>%
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")
+
+```
+
+# Form: Vaccines
+
+**Verificar si hay variables missing.**: 
+
+```{r, echo=FALSE}
+  pos_i_vac <- which(colnames(data)=="influenza_full_regimen")
+  pos_f_vac <- which(colnames(data)=="vaccines_complete")
+  vac <- data[,c(pos_i_vac:pos_f_vac)]
+  
+  #Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_vac<-diagnose(vac)
+  
+  #Filtrar y visualizar variables con valor missing
+  diag_incl_vac %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable()%>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+
+  #Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_vac[diag_incl_vac$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.))) %>%
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")
+  
+```
+
+# Form: Anthropometry
+
+**Verificar si hay variables missing.**: 
+
+```{r}
+  pos_i_anth <- which(colnames(data)=="weight")
+  pos_f_anth <- which(colnames(data)=="anthropometry_complete")
+  anth <- data[,c(pos_i_anth:pos_f_anth)]
+  
+  #Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_anth<-diagnose(anth)
+  
+  #Filtrar y visualizar variables con valor missing
+  diag_incl_anth %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable()%>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952") 
+ 
+    #Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_anth[diag_incl_anth$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.))) %>%
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")  
+  
+```
+
+# Form: Admission Signs And Symptoms
+
+**Verificar si hay variables missing.**: 
+
+```{r}
+  
+  pos_i_ss <- which(colnames(data)=="temp_vsorres")
+  pos_f_ss <- which(colnames(data)=="admission_signs_and_symptoms_complete")
+  ss <- data[,c(pos_i_ss:pos_f_ss)]
+  
+  #Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_ss<-diagnose(ss)
+  
+  #Filtrar y visualizar variables con valor missing
+  diag_incl_ss %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+     kable() %>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952") 
+
+  #Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_ss[diag_incl_ss$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.))) %>%
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")  
+  
+```
+
+# Form: Blood tests
+
+**Verificar si hay variables missing.**: 
+
+```{r}
+  pos_i_bloodt <- which(colnames(data)=="hb")
+  pos_f_bloodt <- which(colnames(data)=="blood_tests_complete")
+  bloodt <- data[,c(pos_i_bloodt:pos_f_bloodt)]
+  
+  #Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_bloodt<-diagnose(bloodt)
+  
+  #Filtrar y visualizar variables con valor missing
+  diag_incl_bloodt %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable()%>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+  
+    #Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_bloodt[diag_incl_bloodt$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.))) %>%
+  kable()%>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")    
+  
+  
+```
+
+# Form: Respiratory Secretion Microbiology
+
+**Verificar si hay variables missing.**: 
+
+
+```{r}
+  pos_i_rsm <- which(colnames(data)=="pcr_cov2_1")
+  pos_f_rsm <- which(colnames(data)=="respiratory_secretion_microbiology_complete")
+  rsm <- data[,c(pos_i_rsm:pos_f_rsm)]
+  
+  #Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_rsm<-diagnose(rsm)
+  
+  #Filtrar y visualizar variables con valor missing
+  diag_incl_rsm %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable()%>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+  
+      #Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_rsm[diag_incl_rsm$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.))) %>%
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")
+  
+```
+
+# Form: Blood Microbiology
+
+**Verificar si hay variables missing.**:
+
+Si first_sr_sc2 es diferente de Yes entonces first_sr_sc2_type, first_sr_sc2_type_ot, first_sr_sc2_date, igm_sc2_1 y igg_sc2_1 y sr_sc2_days son NA. 
+
+Si second_sr_sc2 es diferente de Yes entonces second_sr_sc2_type, second_sr_sc2_type_ot, second_sr_sc2_date, igm_sc2_2 y igg_sc2_2 y sr_sc2_days son NA. 
+
+Si blood_culture es No, entonces probable_bacterial_etiology_hemoculture, other_bacteria_hemoculture son NA. 
+
+Si first_sr_atipical es No, entonces date_ser_1, serology1_igm_mn, serology1_igg_mn, title1_igg_mn, serology1_igm_cn, serology1_igg_cn, title1_igg_cn. 
+Si second_sr_atipical es No, entonces date_ser_2, serology2_igm_mn, serology2_igg_mn, title2_igg_mn, serology2_igm_cn, serology2_igg_cn, title2_igg_cn. 
+
+
+```{r}
+  pos_i_bm <- which(colnames(data)=="first_sr_sc2")
+  pos_f_bm <- which(colnames(data)=="blood_microbiology_complete")
+  bm <- data[,c(pos_i_bm:pos_f_bm)]
+  
+  #Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_bm<-diagnose(bm)
+  
+  #Filtrar y visualizar variables con valor missing
+  diag_incl_bm %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable()%>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+
+  #Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_bm[diag_incl_bm$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, first_sr_sc2, second_sr_sc2, blood_culture, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.))) %>%
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")  
+  
+```
+
+# Form: Codetection
+**Verificar si hay variables missing.**:
+
+Si codetection es diferente de Yes entonces codetection_type va a ser missing
+
+```{r}
+  pos_i_cod <- which(colnames(data)=="codetection")
+  pos_f_cod <- which(colnames(data)=="codetecion_complete")
+  cod <- data[,c(pos_i_cod:pos_f_cod)]
+
+  #Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_cod<-diagnose(cod)
+  
+  #Filtrar y visualizar variables con valor missing
+  diag_incl_cod %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable() %>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+  
+      #Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_cod[diag_incl_cod$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, codetection , all_of(missing)) %>%
+  filter_all(any_vars(is.na(.) & codetection == "Yes")) %>%
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")
+
+
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, codetection , all_of(missing)) %>%
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")
+```
+
+
+# Form: Pleural Fluid Microbiology
+
+**Verificar si hay variables missing.**:
+
+Si thoracentesis_done es igual a No entonces las demás variables van a tener missing. 
+
+```{r}
+  pos_i_pfm <- which(colnames(data)=="thoracentesis_done")
+  pos_f_pfm <- which(colnames(data)=="pleural_fluid_microbiology_complete")
+  pfm <- data[,c(pos_i_pfm:pos_f_pfm)]
+  
+  #Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_pfm<-diagnose(pfm)
+  
+  #Filtrar y visualizar variables con valor missing
+  diag_incl_pfm %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable()%>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952") 
+
+    #Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_pfm[diag_incl_pfm$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, thoracentesis_done , all_of(missing)) %>%
+  filter_all(any_vars(is.na(.) & thoracentesis_done != "No")) %>%
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")
+
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, thoracentesis_done , all_of(missing)) %>%
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")
+  
+```
+
+
+# Form: Evolution
+
+**Verificar si hay variables missing.**:
+
+Si	fever_ceoccur_v2 = No, entonces fever_end_date es NA o puede tener fecha si la fiebre es después de la admisión. 
+
+Si oxygen_therapy = No, entonces oxigen_start_date y oxigen_end_date son NA. 
+
+Si hft = No, entonces hft_start_date, hft_end_date y hft_time son NA. 
+
+Si cpap = No, entonces cpap_start_date, cpap_end_date y cpap_time son NA. 
+
+Si picu_admission = No, entonces picu_admission_date, picu_discharge_date, picu_time y mechanical_ventilation son NA.
+
+Si nimv = No, entonces nimv_start_date, nimv_end_date, nimv_time son NA. 
+
+Si mechanical_ventilation = No, entonces imv y nimv son NA. 
+
+Si imv = No, entonces imv_start_date, imv_end_date, imv_time son NA.
+
+
+```{r}
+  pos_i_evol <- which(colnames(data)=="fever_end_date")
+  pos_f_evol <- which(colnames(data)=="evolution_complete")
+  evol <- data[,c(pos_i_evol:pos_f_evol)]
+  
+  #Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_evol<-diagnose(evol)
+  
+  #Filtrar y visualizar variables con valor missing
+  diag_incl_evol %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable()%>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+
+      #Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_evol[diag_incl_evol$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, oxygen_therapy, hft, cpap, picu_admission, fever_ceoccur_v2, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.))) %>%
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5") 
+  
+```
+
+
+# Form: Complications
+
+**Verificar si hay variables missing.**:
+
+```{r}
+  pos_i_comp <- which(colnames(data)=="complications")
+  pos_f_comp <- which(colnames(data)=="complications_complete")
+  comp <- data[,c(pos_i_comp:pos_f_comp)]
+  
+  #Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_comp<-diagnose(comp)
+  
+  #Filtrar y visualizar variables con valor missing
+  diag_incl_comp %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable() %>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+  
+        #Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_comp[diag_incl_comp$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, complications, pleural_effusion, cardio_comp, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.) & complications != "No")) %>%
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")  
+
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, complications, pleural_effusion, cardio_comp, all_of(missing)) %>%
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")  
+
+```
+
+# Form: Raidology
+
+**Verificar si hay variables missing.**:
+
+```{r}
+  pos_i_rad <- which(colnames(data)=="x_ray_1")
+  pos_f_rad <- which(colnames(data)=="radiology_complete")
+  rad <- data[,c(pos_i_rad:pos_f_rad)]
+  
+  #Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_rad<-diagnose(rad)
+  
+  #Filtrar y visualizar variables con valor missing
+  diag_incl_rad %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable() %>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+  
+        #Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_rad[diag_incl_rad$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.))) %>%
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5") 
+    
+```
+
+# Form: Medication
+
+**Verificar si hay variables missing.**:
+
+
+```{r}
+  pos_i_med <- which(colnames(data)=="oro_fluids")
+  pos_f_med <- which(colnames(data)=="medication_complete")
+  med <- data[,c(pos_i_med:pos_f_med)]
+  
+  #Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_med<-diagnose(med)
+  
+  #Filtrar y visualizar variables con valor missing
+  diag_incl_med %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable() %>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+
+  #Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_med[diag_incl_med$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, antiviral_cmyn, antibiotic_cmyn, o_ab, corticost_cmyn, iv_imglob, imod, sys_anticoag, anti_mal, antifung_cmyn, experimental, other_sc2_treatments, vasopressors, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.))) %>% #& antiviral_cmyn !="No" & antibiotic_cmyn !="No"
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")
+
+```
+
+# Form: Outcome
+
+**Verificar si hay variables missing.**:
+
+```{r}
+pos_i_out <- which(colnames(data)=="dsterm")
+  pos_f_out <- which(colnames(data)=="outcome_complete")
+  out <- data[,c(pos_i_out:pos_f_out)]
+  
+  #Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_out<-diagnose(out)
+  
+  #Filtrar y visualizar variables con valor missing
+  diag_incl_out %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable() %>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+  
+    #Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_out[diag_incl_out$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, dsterm, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.))) %>% 
+  kable() %>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5")
+    
+```
+
+# Form: Fever without source study-lumbar tap and urine 
+
+**Verificar si hay variables missing.**:
+
+```{r}
+  pos_i_fws <- which(colnames(data)=="fever_ws")
+  pos_f_fws <- which(colnames(data)=="fever_without_source_study_complete")
+  fws <- data[,c(pos_i_fws:pos_f_fws)]
+  
+  #Diagnóstigo general:nombre variables, tipo de variables, número de missing, % de missing, número de valores missing, rate: valores únicos / # total observaciones 
+  diag_incl_fws<-diagnose(fws)
+  
+  #Filtrar y visualizar variables con valor missing
+  diag_incl_fws %>% 
+    select(variables, missing_count, missing_percent) %>%
+    filter(missing_count>0) %>%
+    kable() %>%
+    kable_paper()%>%
+    row_spec(0, bold = T, color = "black", background = "#FEC952")
+  
+    #Guardar nombres de variables con missing: 
+missing <- as.data.frame(diag_incl_fws[diag_incl_fws$missing_count > 0,1][,1])
+missing <- c(missing[,1])
+
+#Mostrar observación con missing
+data %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name,lumbar_punc, urine_collection, all_of(missing)) %>%
+  filter_all(any_vars(is.na(.))) %>% 
+  kable()%>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#78CFD5") 
+  
+```
+
+# Manejo de variables con información de Fechas
+
+**Fecha de nacimiento del paciente: patient_birth_date. FALSE si no esta entre 2001-11-01 y 2021-12-31** 
+
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(patient_birth_date_qc = patient_birth_date %within% c(interval(ymd("2001-11-01"), ymd("2021-12-31")))) #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(patient_birth_date_qc==FALSE) %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name, patient_birth_date, patient_birth_date_qc) %>%
+  kable()%>%
+  kable_paper()%>%
+  row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Fecha de admisión del paciente: admission_date. FALSE si es menor a 2019-12-31 o mayor a 2022-01-01**
+
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(admission_date_qc = admission_date %within% c(interval(ymd("2019-12-31"), ymd("2022-01-01")))) #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(admission_date_qc==FALSE) %>% 
+  select(record,hospital,health_worker_name,fever_days, admission_date, admission_date_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Inicio de fiebre: fever_onset_date. Diferencia entre fecha de admisión y el día que iniciaron los síntomas de fiebre < 30 días**
+**0: Se cumple condición**
+**1: No cumple condición, revisar fechas del record**
+  
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(fever_start_date_qc = ifelse((admission_date - fever_start_date+ 1)<31 & (admission_date - fever_start_date+ 1)>0,0,1)) #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(fever_start_date_qc==1) %>% 
+  select(record,hospital,health_worker_name,fever_days, admission_date, fever_start_date, fever_start_date_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Fecha de fin de la fiebre: fever_end_date. Diferencia fever_start_date y fever_end_date > 0 entre <= 31**
+**0: Se cumple condición**
+**1: No cumple condición, revisar fechas del record**
+
+
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(fever_end_date_qc = ifelse((fever_end_date - fever_start_date + 1)<31 & (fever_end_date - fever_start_date + 1)>0,0,1)) #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(fever_end_date_qc==1) %>% 
+  select(record,hospital,health_worker_name,fever_days, fever_start_date, fever_end_date, fever_end_date_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+
+**Fecha de PCR at diagnosis: pcr_cov2_1_date. FALSE si no esta entre 2020-01-01 y 2021-12-31**
+
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(pcr_cov2_1_date_qc = pcr_cov2_1_date %within% c(interval(ymd("2020-01-01"), ymd("2021-12-31")))) #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(pcr_cov2_1_date_qc==FALSE) %>% 
+  select(record,hospital,health_worker_name,hospital, health_worker_name, pcr_cov2_1_date, pcr_cov2_1_date_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Verificar consistencia de fecha de admisión y discharge date > 0**
+**1: cumple condición**
+**0: revisar record**
+  
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(hosp_time_qc = ifelse(as.Date(discharge_date) >= as.Date(admission_date),1,0))  #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(hosp_time_qc==0) %>% 
+  select(record,hospital,health_worker_name,hospital, health_worker_name, admission_date, discharge_date,hosp_time, hosp_time_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Dias de terapia de oxígeno tienen que ser > 0 y menor o igual a hosp_time: oxygen_therapy_time.**
+**0: No cumple condición, revisar record**
+**1: Cumple condición**
+
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(oxygen_therapy_time_qc = ifelse(hosp_time>=oxygen_therapy_time & oxygen_therapy_time > 0,1,0))  #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(oxygen_therapy_time_qc==0) %>% 
+  select(record,hospital,health_worker_name,hospital, health_worker_name, admission_date, discharge_date, hosp_time, oxigen_start_date, oxigen_end_date, oxygen_therapy_time, oxygen_therapy_time_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Dias de terapia hft tienen que ser > 0 y menor o igual a max_days: hft_time**
+**0: No cumple condición, revisar record**
+**1: Cumple condición**
+  
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(hft_time_qc = ifelse(hosp_time>=hft_time & hft_time > 0,1,0))  #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(hft_time_qc==0) %>% 
+  select(record,hospital,health_worker_name,hospital, health_worker_name, admission_date, discharge_date, hosp_time, hft_start_date, hft_end_date, hft_time, hft_time_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Dias de terapia CPAP tienen que ser > 0 y menor o igual a max_days: cpap_time.**
+**0: No cumple condición, revisar record**
+**1: Cumple condición**
+  
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(cpap_time_qc = ifelse(hosp_time>=cpap_time & cpap_time > 0,1,0))  #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(cpap_time_qc==0) %>% 
+  select(record,hospital,health_worker_name,hospital, health_worker_name, admission_date, discharge_date, hosp_time, cpap_start_date, cpap_end_date, cpap_time, cpap_time_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Dias de PICU tienen que ser > 0 y menor o igual a max_days: picu_time.**
+**0: No cumple condición, revisar record**
+**1: Cumple condición**
+  
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(picu_time_qc = ifelse(hosp_time>=picu_time & picu_time > 0,1,0))  #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(picu_time_qc==0) %>% 
+  select(record,hospital,health_worker_name,hospital, health_worker_name, admission_date, discharge_date, hosp_time, picu_admission_date, picu_discharge_date, picu_time, picu_time_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Dias de ventilación mecánica no invasiva > 0 & < max_days: nimv_time.**
+**0: No cumple condición, revisar record**
+**1: Cumple condición**
+  
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(nimv_time_qc = ifelse(hosp_time>=nimv_time & nimv_time > 0,1,0))  #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(nimv_time_qc==0) %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name,admission_date, discharge_date, hosp_time, nimv_start_date, nimv_end_date, nimv_time, nimv_time_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Dias de ventilación mecánica invasiva > 0 & < max_days: imv_time.**
+**0: No cumple condición, revisar record**
+**1: Cumple condición**
+  
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(imv_time_qc = ifelse(hosp_time>=imv_time & imv_time > 0,1,0))  #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(imv_time_qc==0) %>% 
+  select(record,hospital,health_worker_name,hospital, health_worker_name, admission_date, discharge_date, hosp_time, imv_start_date, imv_end_date, imv_time, imv_time_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Fecha de x_ray_1: estar entre admission_date y discharge_date. FALSE si no esta entre esas dos fechas**
+
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(x_ray_1_date_qc = x_ray_1_date %within% c(interval(ymd(admission_date), ymd(discharge_date)))) #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(x_ray_1_date_qc==FALSE) %>% 
+  select(record,hospital,health_worker_name,hospital, health_worker_name,  x_ray_1_date, admission_date, discharge_date, x_ray_1_date_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Fecha de x_ray_2: estar entre admission_date y discharge_date. FALSE si no esta entre esas dos fechas**
+
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(x_ray_2_date_qc = x_ray_2_date %within% c(interval(ymd(admission_date), ymd(discharge_date)))) #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(x_ray_2_date_qc==FALSE) %>% 
+  select(record,hospital,health_worker_name,hospital, health_worker_name, x_ray_2_date, admission_date, discharge_date, x_ray_2_date_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Fecha de x_ray_3: estar entre admission_date y discharge_date. FALSE si no esta entre esas dos fechas**
+
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(x_ray_3_date_qc = x_ray_3_date %within% c(interval(ymd(admission_date), ymd(discharge_date)))) #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(x_ray_3_date_qc==FALSE) %>% 
+  select(record,hospital,health_worker_name,hospital, health_worker_name, x_ray_3_date, admission_date, discharge_date, x_ray_3_date_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+
+```
+
+**Fecha de lung_ct: estar entre admission_date y discharge_date. FALSE si no esta entre esas dos fechas**
+
+```{r}
+#Variable con info de control de calidad
+data %<>%
+  mutate(lung_ct_date_qc = lung_ct_date %within% c(interval(ymd(admission_date), ymd(discharge_date)))) #agregar una nueva columna
+#Visualización de observaciones con problemas de calidad
+data %>% 
+  filter(lung_ct_date_qc==FALSE) %>% 
+  select(record,hospital,health_worker_name,hospital, health_worker_name, lung_ct_date, admission_date, discharge_date, lung_ct_date_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+
+# Consistencia comorbilidades
+
+**Si comorb == 1, entonces: al menos una comorbilidad debe ser == 1.**
+**Si 1: entonces esta bien;**
+**Si 0: esta mal, revisar record**
+
+```{r}
+#Transformar variables con info de comorbilidades: Yes == 1, No == 0, Unknown == 0
+comorbilidades <- sapply(data[ ,c(28:50,52,54)], as.numeric )
+comorbilidades %<>% as.data.frame()
+comorbilidades[comorbilidades ==  2] <- 0
+comorbilidades[comorbilidades ==  3] <- 0
+comorbilidades$comorb <- data$comorb
+comorbilidades$record <- data$record
+comorbilidades$hospital <- data$hospital
+comorbilidades$health_worker_name <- data$health_worker_name
+
+#Columna con info de condición lógica
+comorbilidades%<>%
+  mutate(comorb1_qc=((rowSums(comorbilidades[,c(1:25)], na.rm=T) > 0)*1))
+#Visualizar observaciones que no cumplen con la condición:
+comorbilidades %>% 
+  filter(comorb == "Yes" & comorb1_qc==0) %>% 
+  select(record,hospital,health_worker_name, comorb, comorb1_qc) %>%
+  kable() %>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Si comorb == 0 (No). Ninguna comorbilidad debe ser == 1 (Yes). 1: esta bien; 0: revisar record**
+
+Si hay un 1 en algún factor de riesgo (obesity, malnutrition, smoking o other_mhyn) entonces comorb puede ser igual a No.
+
+```{r}
+#Columna con info de condición lógica
+comorbilidades%<>%
+  mutate(comorb2_qc=((rowSums(comorbilidades[,c(1:25)], na.rm=T) == 0)*1))
+#Visualizar observaciones que no cumplen con la condición:
+comorbilidades_sub <- comorbilidades %>%
+  filter(comorb == "No" & comorb2_qc==0)
+  comorbilidades_sub[is.na(comorbilidades_sub)] <- 0
+comorbilidades_sub <-  comorbilidades_sub[,c(1:25,31)] %>%
+  select_if(funs(is.na(.) !=TRUE && mean(.) != 0))
+
+id_comorb <- comorbilidades %>% 
+  filter(comorb == "No" & comorb2_qc==0) %>% 
+  select(record,hospital,health_worker_name, comorb, comorb2_qc) 
+
+comorbilidades_sub$record <-id_comorb$record
+comorbilidades_sub$hospital <-id_comorb$hospital
+comorbilidades_sub$health_worker_name <-id_comorb$health_worker_name
+comorbilidades_sub$comorb <-id_comorb$comorb
+comorbilidades_sub$comorb2_qc <-id_comorb$comorb2_qc
+
+comorbilidades_sub %>%
+  kable() %>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+
+```
+
+
+# Consistencia Codetection
+
+**Marcar "unknown due to lack of microbiological data" si no hay al menos PCR obtained for 16 viruses in respiratory secretion=yes.**
+**1: esta bien;**
+**0: no esta bien la condición, revisar record o virus_obtaines_pcr_16 == yes**
+
+```{r}
+#Columna con info de condición de control de calidad
+data %<>%
+  mutate(codetection_qc = ifelse(virus_obtained_pcr_16=="No",ifelse(codetection=="Unknown due to lack of microbiological data",1,0),0))
+#Visualizar observaciones que no cumplen con la condición:
+data %>% 
+  filter(codetection_qc == 0 & virus_obtained_pcr_16=="No") %>% 
+  select(record,hospital,health_worker_name, hospital, health_worker_name,codetection, virus_obtained_pcr_16, codetection_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+# Identificar variables marcadas con opción "unknown"
+
+**Revisar si hay observaciones que tengan marcada la opción de sex == "Not specified" (3). Si se cumple la condición entonces columna sex_qc tiene un 1**
+
+```{r}
+
+#Variable con info de control de calidad
+data %<>%
+  mutate(sex_qc = ifelse(sex == "Not specified",1,0)) 
+#Visualizar records con sex == 3 
+data %>%
+  filter(sex_qc==1) %>% 
+  select(record,hospital,health_worker_name, sex, sex_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4") 
+
+```
+
+
+
+# Check-range
+
+Verificar rango variable weight: >= 1000 & < 200000
+  1: bien
+  0: revisar record
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(weight_qc = ifelse(between(weight,1000, 200000),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(weight_qc==0) %>% 
+  select(record,hospital,health_worker_name,hospital, health_worker_name, weight, weight_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+
+Verificar rango variable size: >= 20 & < 200
+  1: bien
+  0: revisar record
+  
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(size_qc = ifelse(between(size,20,200),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(size_qc==0) %>% 
+  select(record,hospital,health_worker_name,hospital, health_worker_name, size, size_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4") 
+```
+
+Verificar rango variable muac [mm] (mid-upper circumference): >= 0 & <= 700
+  1: bien
+  0: revisar record
+  
+```{r}
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(muac_qc = ifelse(between(muac,0,700),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(muac_qc==0) %>% 
+  select(record,hospital,health_worker_name,hospital, health_worker_name, muac, muac_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+
+```
+  
+Verificar rango variable hemoglobina hb: =>7 & <= 20
+  1: bien
+  0: revisar record
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(hb_qc = ifelse(between(hb,7,20),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(hb_qc==0) %>% 
+  select(record,hospital,health_worker_name,hospital, health_worker_name, hb, hb_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+Verificar rango variable leucocitos leukocytes: =>0 & <= 250000
+  1: bien
+  0: revisar record
+  
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(leukocytes_qc = ifelse(between(leukocytes,0,250000),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(leukocytes_qc==0) %>% 
+  select(record,hospital,health_worker_name,hospital,health_worker_name,leukocytes, leukocytes_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+
+Verificar rango variable neutrofilos neutrophils: =>0 & <= 100000
+  1: bien
+  0: revisar record
+  
+```{r}
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(neutrophils_qc = ifelse(between(neutrophils,0,100000),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(neutrophils_qc==0) %>% 
+  select(record,hospital,health_worker_name, neutrophils, neutrophils_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+
+Verificar rango variable lymphocytes: =>0 & <= 50000
+  1: bien
+  0: revisar record
+  
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(lymphocytes_qc = ifelse(between(lymphocytes,0,50000),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(lymphocytes_qc==0) %>% 
+  select(record,hospital,health_worker_name, lymphocytes, lymphocytes_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+
+Verificar rango variable platelets: =>0 & <= 6000000
+  1: bien
+  0: revisar record
+  
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(platelets_qc = ifelse(between(platelets,0,6000000),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(platelets_qc==0) %>% 
+  select(record,hospital,health_worker_name, platelets, platelets_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+Verificar rango variable aptt_aptr: =>0 & <= 120
+  1: bien
+  0: revisar record
+  
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(aptt_aptr_qc = ifelse(between(aptt_aptr,0,120),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(aptt_aptr_qc==0) %>% 
+  select(record,hospital,health_worker_name, aptt_aptr, aptt_aptr_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+
+Verificar rango variable pt: =>0 & <= 60
+  1: bien
+  0: revisar record
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(pt_qc = ifelse(between(pt,0,60),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(pt_qc==0) %>% 
+  select(record,hospital,health_worker_name, pt, pt_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+Verificar rango variable inr: =>0 & <= 100
+  1: bien
+  0: revisar record
+  
+```{r}
+
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(inr_qc = ifelse(between(inr,0,100),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(inr_qc==0) %>% 
+  select(record,hospital,health_worker_name, inr, inr_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+
+```
+
+Verificar rango variable fibrino: =>0 & <= 1000
+  1: bien
+  0: revisar record
+  
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(fibrino_qc = ifelse(between(fibrino,0,1000),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(fibrino_qc==0) %>% 
+  select(record,hospital,health_worker_name, fibrino, fibrino_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+
+Verificar rango variable c_reactive_protein: =>0 & <= 600
+  1: bien
+  0: revisar record
+
+```{r}
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(c_reactive_protein_qc = ifelse(between(c_reactive_protein,0,600),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(c_reactive_protein_qc==0) %>% 
+  select(record,hospital,health_worker_name, c_reactive_protein, c_reactive_protein_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+
+```
+
+
+Verificar rango variable procalcitonin: =>0 & <= 99
+  1: bien
+  0: revisar record
+  
+```{r}
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(procalcitonin_qc = ifelse(between(procalcitonin,0,99),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(procalcitonin_qc==0) %>% 
+  select(record,hospital,health_worker_name, procalcitonin, procalcitonin_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+Verificar rango variable albumin: =>0.5 & <= 5
+  1: bien
+  0: revisar record
+  
+```{r}
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(albumin_qc = ifelse(between(albumin,0.5,5),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(albumin_qc==0) %>% 
+  select(record,hospital,health_worker_name, albumin, albumin_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+
+Verificar rango variable sodium: =>110 & <= 180
+  1: bien
+  0: revisar record
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(sodium_qc = ifelse(between(sodium,110,180),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(sodium_qc==0) %>% 
+  select(record,hospital,health_worker_name, sodium, sodium_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+
+Verificar rango variable il_6: =>0 & <= 6
+  1: bien
+  0: revisar record
+  
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(il_6_qc = ifelse(between(il_6,0,6),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(il_6_qc==0) %>% 
+  select(record,hospital,health_worker_name, il_6, il_6_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+  
+
+Verificar rango variable ferritin: =>12 & <= 300
+  1: bien
+  0: revisar record
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(ferritin_qc = ifelse(between(ferritin,12,300),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(ferritin_qc==0) %>% 
+  select(record,hospital,health_worker_name, ferritin, ferritin_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+Verificar rango variable trig: =>0 & <= 1000
+  1: bien
+  0: revisar record
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(trig_qc = ifelse(between(trig,0,1000),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(trig_qc==0) %>% 
+  select(record,hospital,health_worker_name, trig, trig_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+Verificar rango variable bilirubin: =>0 & <= 50000
+  1: bien
+  0: revisar record
+
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(bilirubin_qc = ifelse(between(bilirubin,0,50000),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(bilirubin_qc==0) %>% 
+  select(record,hospital,health_worker_name, bilirubin, bilirubin_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+
+Verificar rango variable lactate: =>0 & <= 100
+  1: bien
+  0: revisar record
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(lactate_qc = ifelse(between(lactate,0,100),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(lactate_qc==0) %>% 
+  select(record,hospital,health_worker_name, lactate, lactate_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+Verificar rango variable ph: =>7.35 & <= 7.45
+  1: bien
+  0: revisar record
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(ph_qc = ifelse(between(ph,7.35,7.45),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(ph_qc==0) %>% 
+  select(record,hospital,health_worker_name, ph, ph_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+Verificar rango variable po2: =>10 & <= 60
+  1: bien
+  0: revisar record
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(po2_qc = ifelse(between(po2,10,60),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(po2_qc==0) %>% 
+  select(record,hospital,health_worker_name, po2, po2_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+Verificar rango variable pco2: =>20 & <= 70
+  1: bien
+  0: revisar record
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(pco2_qc = ifelse(between(pco2,20,70),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(pco2_qc==0) %>% 
+  select(record,hospital,health_worker_name, pco2, pco2_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+Verificar rango variable antiviral_days>= 0
+  1: bien
+  0: revisar record
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(antiviral_days_qc = ifelse(antiviral_days >= 0,1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(antiviral_days_qc==0) %>% 
+  select(record,hospital,health_worker_name, antiviral_days, antiviral_days_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+Verificar rango variable csf_leuco [0; 100000]
+  1: bien
+  0: revisar record
+
+```{r}
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(csf_leuco_qc = ifelse(between(csf_leuco,0,100000),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(csf_leuco_qc==0) %>% 
+  select(record,hospital,health_worker_name, csf_leuco, csf_leuco_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+
+Verificar rango variable csf_neutro [0; 100]
+  1: bien
+  0: revisar record
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(csf_neutro_qc = ifelse(between(csf_neutro,0,100),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(csf_neutro_qc==0) %>% 
+  select(record,hospital,health_worker_name, csf_neutro, csf_neutro_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+
+Verificar rango variable csf_lympho [0; 100]
+  1: bien
+  0: revisar record
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(csf_lympho_qc = ifelse(between(csf_lympho,0,100),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(csf_lympho_qc==0) %>% 
+  select(record,hospital,health_worker_name, csf_lympho, csf_lympho_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+Verificar rango variable protein_csf [0; 10000]
+  1: bien
+  0: revisar record
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(protein_csf_qc = ifelse(between(protein_csf,0,10000),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(protein_csf_qc==0) %>% 
+  select(record,hospital,health_worker_name, protein_csf, protein_csf_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+
+```
+
+Verificar rango variable glucose_csf [0; 500]
+  1: bien
+  0: revisar record
+
+```{r}
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(glucose_csf_qc = ifelse(between(glucose_csf,0,500),1,0))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(glucose_csf_qc==0) %>% 
+  select(record,hospital,health_worker_name, glucose_csf, glucose_csf_qc) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+
+```
+
+
+
+# Consistencia diagnósticos - BONSAI - EPICO
+
+**Pacientes con diagnóstico final de "URTI" deben tener Yes en alguna de las siguientes variables:  ("cough_ceoccur_v2","sorethroat_ceoccur_v2","runnynose_ceoccur_v2","headache_ceoccur_v2") y no deben tener ningún YES en las siguientes variables:("wheeze_ceoccur_v2","chestpain_ceoccur_v2","myalgia_ceoccur_v2","jointpain_ceoccur_v2","fatigue_ceoccur_v2","shortbreath_ceoccur_v2","lowerchest_ceoccur_v2","confusion_ceoccur_v2","seizures_cecoccur_v2","abdopain_ceoccur_v2","diarrhoea_ceoccur_v2","conjunct_ceoccur_v2","rash_ceoccur_v2","skinulcers_ceoccur_v2","lymp_ceoccur_v2","bleed_ceoccur_v2","shock")**
+1: esta bien
+0: no cumple
+3: no aplica
+
+
+```{r}
+#Reemplazar NAs por -99 solo para las columnas necesarias para realizar el condicional
+#data[c("final_dx_1","final_dx_2","final_dx_3","xray_result_1","xray_result_2", "xray_result_3")][is.na(data[c("final_dx_1","final_dx_2","final_dx_3","xray_result_1","xray_result_2", "xray_result_3")])] <- -99
+
+
+# URTI == 40
+
+data %<>% 
+  mutate(URTI_qc = ifelse(final_dx_1 == "URTI" | final_dx_2 == "URTI" | final_dx_3 == "URTI", ifelse((cough_ceoccur_v2=="Yes" | sorethroat_ceoccur_v2=="Yes" | runnynose_ceoccur_v2=="Yes" | headache_ceoccur_v2=="Yes") & (wheeze_ceoccur_v2!="Yes" & chestpain_ceoccur_v2 !="Yes" & myalgia_ceoccur_v2 !="Yes"  & jointpain_ceoccur_v2 != "Yes" & fatigue_ceoccur_v2 !="Yes" & shortbreath_ceoccur_v2 != "Yes" & lowerchest_ceoccur_v2 != "Yes" & confusion_ceoccur_v2 != "Yes" & seizures_cecoccur_v2 !="Yes" & abdopain_ceoccur_v2 != "Yes" & diarrhoea_ceoccur_v2 != "Yes" & conjunct_ceoccur_v2 != "Yes" & rash_ceoccur_v2 != "Yes" & skinulcers_ceoccur_v2 !="Yes" & lymp_ceoccur_v2 != "Yes" & bleed_ceoccur_v2 !="Yes" & shock != "Yes"),1,0),3))
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(URTI_qc==0) %>% 
+  select(record, hospital, health_worker_name, URTI_qc, final_dx_1, final_dx_2, final_dx_3, cough_ceoccur_v2, sorethroat_ceoccur_v2, runnynose_ceoccur_v2, headache_ceoccur_v2, chestpain_ceoccur_v2,myalgia_ceoccur_v2,jointpain_ceoccur_v2,fatigue_ceoccur_v2,shortbreath_ceoccur_v2,lowerchest_ceoccur_v2,confusion_ceoccur_v2,seizures_cecoccur_v2,abdopain_ceoccur_v2,diarrhoea_ceoccur_v2,conjunct_ceoccur_v2,rash_ceoccur_v2,skinulcers_ceoccur_v2,lymp_ceoccur_v2,bleed_ceoccur_v2,shock) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+
+```
+
+
+**Pacientes con diagnóstico final de "Flu-like syndrome" deben tener Yes en alguna de las siguientes variables: ("cough_ceoccur_v2","sorethroat_ceoccur_v2","runnynose_ceoccur_v2","headache_ceoccur_v2") Y Yes en alguna de las siguientes variables:  c("myalgia_ceoccur_v2","jointpain_ceoccur_v2","fatigue_ceoccur_v2","abdopain_ceoccur_v2","diarrhoea_ceoccur_v2") y NO deben tener Yes en ninguna de las siguientes variables: c("wheeze_ceoccur_v2","chestpain_ceoccur_v2","shortbreath_ceoccur_v2","lowerchest_ceoccur_v2","confusion_ceoccur_v2 seizures_cecoccur_v2","conjunct_ceoccur_v2","rash_ceoccur_v2","skinulcers_ceoccur_v2","lymp_ceoccur_v2","bleed_ceoccur_v2","shock")**
+1: esta bien
+0: no cumple
+3: no aplica
+
+
+```{r}
+# Flu-like syndrom = 15
+
+
+
+#Síntomas generales
+
+df_general_symptoms <- data[ ,grepl("myalgia_ceoccur_v2|jointpain_ceoccur_v2|fatigue_ceoccur_v2|headache_ceoccur_v2", names( data ) )]
+
+df_general_symptoms_cond <- apply( df_general_symptoms , 1 , function(x) any( x == "Yes" ) )
+
+#Upper respiratory symptoms
+
+df_uppresp_symptoms <- data[ ,grepl("runnynose_ceoccur_v2|sorethroat_ceoccur_v2|cough_ceoccur_v2", names( data ) )]
+
+df_uppresp_cond <- apply( df_uppresp_symptoms , 1 , function(x) any( x == "Yes" ) )
+
+
+#Gastrointestinal symptoms:
+
+df_gastrointestinal_symptoms <- data[ ,grepl("abdopain_ceoccur_v2|diarrhoea_ceoccur_v2|vomit_ceoccur_v2", names( data ) )]
+
+df_gastrointestinal_cond <- apply( df_gastrointestinal_symptoms , 1 , function(x) any( x == "Yes" ))
+
+#Ciclo para verificar condición
+
+nrow <- dim(data)[1]
+data$suma_sintomas <- 0
+
+for(i in 1:nrow){ #Recorrer filas
+  
+    if (!is.na(df_gastrointestinal_cond[[i]]) & df_gastrointestinal_cond[[i]] == TRUE){
+      data$suma_sintomas[i] <- data$suma_sintomas[i] +1
+    }
+    if (!is.na(df_uppresp_cond[[i]]) & df_uppresp_cond[[i]] == TRUE){
+      data$suma_sintomas[i]  <- data$suma_sintomas[i] +1
+    } 
+     if (!is.na(df_general_symptoms_cond[[i]]) & df_general_symptoms_cond[[i]] == TRUE){
+      data$suma_sintomas[i]  <- data$suma_sintomas[i]+1 
+     }
+}
+
+
+  data %<>%
+  mutate(fls_qc=ifelse(final_dx_1 == "Flu-like syndrome" | final_dx_2 == "Flu-like syndrome" | final_dx_3 == "Flu-like syndrome", ifelse(suma_sintomas>=2,1,0),3))
+
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(fls_qc==0) %>% 
+  select(record,hospital, health_worker_name, fls_qc,suma_sintomas, final_dx_1, final_dx_2, final_dx_3, cough_ceoccur_v2, sorethroat_ceoccur_v2, runnynose_ceoccur_v2, headache_ceoccur_v2, myalgia_ceoccur_v2, jointpain_ceoccur_v2, fatigue_ceoccur_v2, abdopain_ceoccur_v2,diarrhoea_ceoccur_v2,vomit_ceoccur_v2) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+
+```
+
+**Pacientes con diagnóstico de "Pneumonia" en final_dx_1, final_dx_2 o final_dx_3 deben tener "Condensation" o "Other infiltrates" en xray_result_1, xray_result_2 o xray_result_3.**
+1: esta bien
+0: no cumple
+3: no aplica
+
+```{r}
+#Pneuminia == 30
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(pneumonia_qc = ifelse(final_dx_1 == "Pneumonia" | final_dx_2 == "Pneumonia" | final_dx_3 == "Pneumonia", ifelse((xray_result_1=="Condensation" | xray_result_1=="Other infiltrates") | (xray_result_2=="Condensation" | xray_result_2=="Other infiltrates") | (xray_result_3=="Condensation" | xray_result_3=="Other infiltrates"),1,0),3))
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(pneumonia_qc==0) %>% 
+  select(record,hospital, health_worker_name, pneumonia_qc, final_dx_1, final_dx_2, final_dx_3, xray_result_1, xray_result_2, xray_result_3) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Pacientes con diagnóstico de "Neoplasm" deben tener Yes en la variable malignantneo_mhyn**
+1: esta bien
+0: no cumple
+3: no aplica
+
+```{r}
+#Neoplasm == 28
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(neoplasm_qc = ifelse(final_dx_1 == "Neoplasm" | final_dx_2 == "Neoplasm" | final_dx_3 == "Neoplasm", ifelse(malignantneo_mhyn=="Yes",1,0),3))
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(neoplasm_qc==0) %>% 
+  select(record,hospital, health_worker_name, neoplasm_qc, final_dx_1, final_dx_2, final_dx_3, malignantneo_mhyn) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Pacientes con diagnóstico de "Fever without a source" en final_dx_1, final_dx_2 o final_dx_3 deben tener Yes en fever_ws**
+1: esta bien
+0: no cumple
+3: no aplica
+
+```{r}
+#Fever without a source == 14
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(feverws_qc = ifelse(final_dx_1 == "Fever without a source" | final_dx_2 == "Fever without a source" | final_dx_3 == "Fever without a source", ifelse(fever_ws=="Yes",1,0),3))
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(feverws_qc==0) %>% 
+  select(record,hospital, health_worker_name, feverws_qc, final_dx_1, final_dx_2, final_dx_3, fever_ws) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Pacientes con "Kawasaki" o "Inflammatory syndrome" diagnóstico final (final_dx_1, final_dx_2 o final_dx_3) deben tener Yes en variable kawa.**
+1: esta bien
+0: no cumple
+3: no aplica
+
+```{r}
+
+#Kawasaki == 24
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(kawasaki_qc = ifelse(final_dx_1 == "Kawasaki" | final_dx_2 == "Kawasaki" | final_dx_3 == "Kawasaki", ifelse(kawa=="Yes",1,0),3))
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(kawasaki_qc==0) %>% 
+  select(record, hospital, health_worker_name,kawasaki_qc, final_dx_1, final_dx_2, final_dx_3, kawa) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+
+#Inflammatory syndrom == 22
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(infs_qc = ifelse(final_dx_1 == "Inflammatory syndrome" | final_dx_2 == "Inflammatory syndrome" | final_dx_3 == "Inflammatory syndrome", ifelse(kawa=="Yes",1,0),3))
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(infs_qc==0) %>% 
+  select(record,hospital, health_worker_name, infs_qc, final_dx_1, final_dx_2, final_dx_3, kawa) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Pacientes con "Imnunosuppression" en diagnóstico final deben tener Yes en variable immunosuppresors**
+1: esta bien
+0: no cumple
+3: no aplica
+
+```{r}
+#Immunosupression == 43
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(immuno_qc = ifelse(final_dx_1 == "Immunosuppression" | final_dx_2 == "Immunosuppression" | final_dx_3 == "Immunosuppression", ifelse(immunosupressors=="Yes",1,0),3))
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(immuno_qc==0) %>% 
+  select(record,hospital, health_worker_name, immuno_qc, final_dx_1, final_dx_2, final_dx_3, immunosupressors) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Pacientes con Seizures en diagnóstico final deben tener Yes en variable seizures_cecoccur_v2**
+1: esta bien
+0: no cumple
+3: no aplica
+
+```{r}
+#seizures == 34
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(seizures_qc = ifelse(final_dx_1 == "Seizures" | final_dx_2 == "Seizures" | final_dx_3 == "Seizures", ifelse(seizures_cecoccur_v2=="Yes",1,0),3))
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(seizures_qc==0) %>% 
+  select(record,hospital, health_worker_name, seizures_qc, final_dx_1, final_dx_2, final_dx_3, seizures_cecoccur_v2) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Pacientes con "Bronchitis"** 
+**Pacientes con "Bronchiolitis"**
+**Pacientes con "Asthma flare"**
+1: esta bien
+0: no cumple
+3: no aplica
+
+```{r}
+#Bronchitis == 11
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(bronchitis_qc = ifelse(final_dx_1 == "Bronchitis" | final_dx_2 == "Bronchitis" | final_dx_3 == "Bronchitis", ifelse(wheeze_ceoccur_v2=="Yes" & cough_ceoccur_v2=="Yes" & asthma_mhyn=="No",1,0),3))
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(bronchitis_qc==0) %>% 
+  select(record,hospital, health_worker_name, bronchitis_qc, final_dx_1, final_dx_2, final_dx_3, wheeze_ceoccur_v2, cough_ceoccur_v2, asthma_mhyn) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+
+
+#Bronchiolitis == 10
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(bronchiolitis_qc = ifelse(final_dx_1 == "Bronchiolitis" | final_dx_2 == "Bronchiolitis" | final_dx_3 == "Bronchiolitis", ifelse(resp_inf_mhyn=="No" & age_months <= 25,1,0),3))
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(bronchiolitis_qc==0) %>% 
+  select(record,hospital, health_worker_name, bronchiolitis_qc, final_dx_1, final_dx_2, final_dx_3, resp_inf_mhyn,age_months ) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+
+
+#Asthma flare == 6
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(asthmaflare_qc = ifelse(final_dx_1 == "Asthma flare" | final_dx_2 == "Asthma flare" | final_dx_3 == "Asthma flare", ifelse(wheeze_ceoccur_v2=="Yes" | asthma_mhyn=="Yes",1,0),3))
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(asthmaflare_qc==0) %>% 
+  select(record,hospital, health_worker_name, asthmaflare_qc, final_dx_1, final_dx_2, final_dx_3, wheeze_ceoccur_v2, asthma_mhyn) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+
+
+```
+
+**Gastroenteritis:**
+
+```{r}
+#Gastroenteritis == 16
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(gastro_qc = ifelse(final_dx_1 == "Gastroenteritis" | final_dx_2 == "Gastroenteritis" | final_dx_3 == "Gastroenteritis", ifelse(abdopain_ceoccur_v2=="Yes"|vomit_ceoccur_v2=="Yes" |diarrhoea_ceoccur_v2=="Yes",1,0),3))
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(gastro_qc==0) %>% 
+  select(record,hospital, health_worker_name, gastro_qc, final_dx_1, final_dx_2, final_dx_3, abdopain_ceoccur_v2, vomit_ceoccur_v2,diarrhoea_ceoccur_v2) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+**Dolor abdominal:**
+```{r}
+#Abdominal pain == 1
+
+#Crear columna con info de condición de valores
+data %<>% 
+  mutate(abpain_qc = ifelse(final_dx_1 == "Abdominal pain" | final_dx_2 == "Abdominal pain" | final_dx_3 == "Abdominal pain", ifelse(abdopain_ceoccur_v2=="Yes",1,0),3))
+#Visualizar records con problemas de calidad 
+data %>%
+  filter(abpain_qc==0) %>% 
+  select(record,hospital, health_worker_name, abpain_qc, final_dx_1, final_dx_2, final_dx_3, abdopain_ceoccur_v2) %>%
+  kable()%>%   kable_paper()%>%   row_spec(0, bold = T, color = "white", background = "#53A8E4")
+```
+
+
+
+
